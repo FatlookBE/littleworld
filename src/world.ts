@@ -3,7 +3,7 @@ import { bridgeRows, riverCenter, riverHalfWidth } from "./core/navigation";
 import { remainsStage } from "./core/lifecycle";
 import { residentSkin } from "./sprites";
 import { PaintedTerrain } from "./terrain";
-import { WorldFoundation } from "./foundation";
+import { WorldFoundation, decayOf } from "./foundation";
 import { AnimationAtlas, loopFrame } from "./animation";
 import { EnvironmentAtlas, buildingDamageStage } from "./environment";
 import { ResidentAtlas } from "./sprites";
@@ -81,6 +81,8 @@ export class WorldRenderer {
   pan: Point = [0, 0];
   /** Transient camera offset (earthquakes); never saved or user-driven. */
   shake: Point = [0, 0];
+  /** Smoothed rot of the carriers, 0 to 1. */
+  decay = 0;
   hits: Hit[] = [];
   width = 0;
   height = 0;
@@ -819,6 +821,7 @@ export class WorldRenderer {
       Math.sin(time * 61) * power,
       Math.cos(time * 53) * power * 0.7,
     ];
+    this.decay += (decayOf(w) - this.decay) * 0.03;
     this.hits = [];
     c.clearRect(0, 0, this.width, this.height);
     const bg = c.createRadialGradient(
@@ -846,7 +849,7 @@ export class WorldRenderer {
     const [worldX, worldY] = this.project(14.5, 14.5);
     if (!w.settings.reducedMotion)
       drawCritters(c, this.time, this.width, this.height, worldX, worldY, s);
-    if (!this.foundation.draw(c, worldX, worldY, s, this.time)) {
+    if (!this.foundation.draw(c, worldX, worldY, s, this.time, this.decay)) {
       if (!this.environment.ready) {
         this.shape(
           [
