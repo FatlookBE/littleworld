@@ -3,14 +3,12 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.tsx";
 
-import DecayDemo from "./DecayDemo";
+import VillageDemo from "./VillageDemo";
+
+const demo = new URLSearchParams(location.search).get("demo");
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    {new URLSearchParams(location.search).get("demo") === "degradation" ? (
-      <DecayDemo />
-    ) : (
-      <App />
-    )}
+    {demo === "village" || demo === "degradation" ? <VillageDemo /> : <App />}
   </StrictMode>,
 );

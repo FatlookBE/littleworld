@@ -470,9 +470,9 @@ function App() {
               : "Quelqu’un a encore laissé la porte du jardin ouverte."}
         </p>
       </aside>
-      {ready && population === 0 && (
-        <a className="demo-nav" href="?demo=degradation">
-          Voir la dégradation en accéléré
+      {ready && (
+        <a className="demo-nav" href="?demo=village">
+          Jouer la démo
         </a>
       )}
       <div className="view-tools">
@@ -1073,7 +1073,7 @@ function App() {
               <p className="hint" role="status">
                 {syncStatus || "Synchronisation automatique…"}
               </p>
-              <a href="?demo=degradation">Voir la dégradation en accéléré</a>
+              <a href="?demo=village">Jouer la démo</a>
               <h3>Importer des métadonnées</h3>
               <div
                 className="accounting"

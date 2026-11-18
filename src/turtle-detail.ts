@@ -12,9 +12,47 @@ const eyeCenters = [
 const eyeRadiusX = 25,
   eyeRadiusY = 18;
 
+// Match fine painted texture across the ruined swim cycle. The last
+// pair has the softest source detail. Gains are in source-pixel space.
+const ruinedDetailGain = [0.02, 0.045, 0.05, 0.047, 0.067, 0.027, 0.115, 0.106];
+
+function sharpenRuinedPair(sheet: ImageData, pair: number) {
+  const { data, width, height } = sheet;
+  const source = new Uint8ClampedArray(data);
+  const stride = width * 4;
+  const cell = width / 2;
+  for (let col = 0; col < 2; col++) {
+    const gain = ruinedDetailGain[pair * 2 + col];
+    if (!gain) continue;
+    for (let y = 1; y < height - 1; y++) {
+      for (let x = col * cell + 1; x < (col + 1) * cell - 1; x++) {
+        const i = y * stride + x * 4;
+        // Preserve antialiased silhouettes and their transparent neighbours.
+        if (
+          source[i + 3] < 245 ||
+          source[i - 1] < 245 ||
+          source[i + 7] < 245 ||
+          source[i - stride + 3] < 245 ||
+          source[i + stride + 3] < 245
+        )
+          continue;
+        for (let c = i; c < i + 3; c++) {
+          const detail =
+            source[c] * 4 -
+            source[c - 4] -
+            source[c + 4] -
+            source[c - stride] -
+            source[c + stride];
+          data[c] = source[c] + gain * detail;
+        }
+      }
+    }
+  }
+}
+
 /** Large two-pose sheets preserve painted detail when the world is zoomed in. */
 export class TurtleDetail {
-  images: HTMLImageElement[] = [];
+  images: (HTMLImageElement | HTMLCanvasElement)[] = [];
   ready = false;
   private eye = document.createElement("canvas");
   private anchors: { top: number; crownX: number; shellWidth: number }[] = [];
@@ -30,7 +68,13 @@ export class TurtleDetail {
         const ctx = canvas.getContext("2d", { willReadFrequently: true });
         if (!ctx) return;
         ctx.drawImage(image, 0, 0);
-        const pixels = ctx.getImageData(0, 0, image.width, image.height).data;
+        const sheet = ctx.getImageData(0, 0, image.width, image.height);
+        if (variant === "ruined") {
+          sharpenRuinedPair(sheet, pair);
+          ctx.putImageData(sheet, 0, 0);
+          this.images[pair] = canvas;
+        }
+        const pixels = sheet.data;
         for (let col = 0; col < 2; col++) {
           const left = Math.round((col * image.width) / 2);
           const right = Math.round(((col + 1) * image.width) / 2);
@@ -86,7 +130,7 @@ export class TurtleDetail {
           if (eye) {
             const [x, y] = eyeCenters[1];
             eye.drawImage(
-              image,
+              this.images[pair],
               768 + x - eyeRadiusX,
               y - eyeRadiusY,
               this.eye.width,

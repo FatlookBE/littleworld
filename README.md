@@ -15,7 +15,7 @@ Ouvrir l’URL Vite, normalement http://127.0.0.1:5173. Garder le même port/ori
 
 ## Observer
 
-- **Jouer la démo**, puis **4×** : 100 lots reproductibles arrivent sur 400 secondes simulées (100 secondes réelles à 4×). Continuer une minute pour observer pénuries et décès ; les interventions et l’état initial changent les histoires.
+- **Jouer la démo** ouvre un village neuf à vitesse normale. Il reçoit un lot de tokens fictifs toutes les quatre secondes de simulation, pendant 100 lots. Le village continue ensuite sa vie. **Mon village** ramène à la sauvegarde locale.
 - Cliquer un habitant ou ouvrir **Habitants & lieux** : besoins, proches, faveurs et souvenirs persistants. Les histoires suivent les ressources et les rencontres, pas une cinématique.
 - **Chronique** : récoltes perdues, partage d’eau, disputes, réparations et décès. Le bouton **i** explique la causalité et permet une entraide fictive.
 - Glisser ou flèches pour déplacer la caméra ; molette ou boutons pour zoomer ; Espace pour mettre en pause ; Échap pour fermer. Tous les habitants et lieux sont accessibles sans le canvas. Disposition compacte pour une petite fenêtre de navigateur ; aucun mode système toujours au premier plan.
