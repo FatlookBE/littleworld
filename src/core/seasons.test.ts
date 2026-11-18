@@ -2,6 +2,7 @@ import { expect, it } from "vitest";
 import { createWorld, step } from "./engine";
 import {
   autumnColour,
+  daysToNextSeason,
   isWet,
   season,
   seasonalWeather,
@@ -59,4 +60,17 @@ it("residents stop walking to the riverside pools once the river is dry", () => 
   v.nextDecision = 0;
   step(w);
   expect(v.action).toContain("puits");
+});
+
+it("counts the village days left in the current season", () => {
+  expect(daysToNextSeason(0)).toBe(4);
+  expect(daysToNextSeason(day * 3 + 10)).toBe(1);
+  expect(daysToNextSeason(day * 4)).toBe(4);
+});
+
+it("writes a chronicle line when a season begins", () => {
+  const w = createWorld(0);
+  w.tick = day * 4 - 1;
+  step(w);
+  expect(w.chronicle[0].text).toContain("L’été");
 });

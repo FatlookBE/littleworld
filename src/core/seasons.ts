@@ -12,6 +12,10 @@ export const season = (tick: number) =>
 export const seasonProgress = (tick: number) =>
   (tick % SEASON_TICKS) / SEASON_TICKS;
 
+/** Whole village days left before the season changes (≥ 1). */
+export const daysToNextSeason = (tick: number) =>
+  DAYS_PER_SEASON - Math.floor((tick % SEASON_TICKS) / 288);
+
 const ramp = (a: number, b: number, v: number) => {
   const t = Math.max(0, Math.min(1, (v - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -45,7 +49,8 @@ export function seasonalWeather(w: World, p: number) {
   const s = season(w.tick),
     slot = Math.floor(w.tick / 150) % 5;
   if (p > 0.72) return "Vent de poussière";
-  if (wetSlots[s].includes(slot)) return s === 3 ? "Neige légère" : "Pluie légère";
+  if (wetSlots[s].includes(slot))
+    return s === 3 ? "Neige légère" : "Pluie légère";
   if (p > 0.4 || (s === 1 && slot === 2)) return "Chaleur sèche";
   return s === 3 ? "Ciel froid" : "Ciel clair";
 }
@@ -72,3 +77,13 @@ export function bareBranches(tick: number) {
   if (s === 0) return 1 - ramp(0.05, 0.4, k);
   return 0;
 }
+
+/** Chronicle line when a new season begins (first tick of the season). */
+export const seasonArrival: Record<Season, string> = {
+  0: "Le printemps revient : la neige fond, les premiers semis sortent.",
+  1: "L’été s’installe. Les puits baissent, les herbes sèchent.",
+  2: "L’automne dore la vallée ; c’est le temps des récoltes.",
+  3: "L’hiver tombe sur Val-des-Saules. Le village se serre.",
+};
+export const isSeasonStart = (tick: number) =>
+  tick > 0 && tick % SEASON_TICKS === 0;

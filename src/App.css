@@ -232,6 +232,13 @@
 .token-count {
   min-width: 183px;
 }
+.token-count > span {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: #aeb89f;
+  margin-bottom: 9px;
+}
 .token-count label {
   display: block;
   font-size: 8px;
@@ -1527,4 +1534,16 @@ body {
 }
 .portrait-3 {
   background-position: 0 -194.14px;
+}
+
+/* Focus mode (default): only the world, the zoom tools and the toggle. */
+.app.focus .topbar,
+.app.focus .place-title,
+.app.focus .world-caption,
+.app.focus .world-hint,
+.app.focus .hud,
+.app.focus .bottom-bar,
+.app.focus .chronicle-teaser,
+.app.focus .skip {
+  display: none;
 }

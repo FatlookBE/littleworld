@@ -145,7 +145,9 @@ it("neighbours form a bucket line that puts out a fire using the reserve", () =>
     ticks++;
   }
   expect(ticks).toBeLessThan(250);
-  expect(w.chronicle.some((e) => e.text.includes("chaîne de seaux"))).toBe(true);
+  expect(w.chronicle.some((e) => e.text.includes("chaîne de seaux"))).toBe(
+    true,
+  );
   const out = w.chronicle.find((e) => e.text.includes("est éteint"));
   expect(out?.kind).toBe("hope");
   expect(restore(JSON.stringify(w)).tick).toBe(w.tick);
@@ -170,9 +172,13 @@ it("a village without water can only watch the fire burn", () => {
 
 it("restores a fire's bucket-line progress and rejects it elsewhere", () => {
   const w = createWorld(0);
-  w.disasters = [{ kind: "fire", x: 8, y: 9, life: 100, people: [1, 2], doused: 12 }];
+  w.disasters = [
+    { kind: "fire", x: 8, y: 9, life: 100, people: [1, 2], doused: 12 },
+  ];
   expect(restore(JSON.stringify(w)).disasters).toEqual(w.disasters);
-  w.disasters = [{ kind: "monster", x: 8, y: 9, life: 100, people: [], doused: 3 }];
+  w.disasters = [
+    { kind: "monster", x: 8, y: 9, life: 100, people: [], doused: 3 },
+  ];
   expect(() => restore(JSON.stringify(w))).toThrow();
 });
 
@@ -186,10 +192,16 @@ it("an unattended fire spreads to a nearby roof in dry weather, never in the rai
   for (let i = 0; i < 6; i++) {
     dry.tick++;
     dry.weather = "Chaleur sèche";
-    apocalypse(dry, () => 0, () => {});
+    apocalypse(
+      dry,
+      () => 0,
+      () => {},
+    );
     dry.tick += 29;
   }
-  expect(dry.disasters.filter((e) => e.kind === "fire").length).toBeGreaterThan(1);
+  expect(dry.disasters.filter((e) => e.kind === "fire").length).toBeGreaterThan(
+    1,
+  );
 
   const wet = createWorld(0);
   wet.tick = 29;
@@ -197,7 +209,11 @@ it("an unattended fire spreads to a nearby roof in dry weather, never in the rai
   wet.weather = "Pluie légère";
   wet.disasters = [{ kind: "fire", x: 8, y: 9, life: 300, people: [] }];
   wet.tick++;
-  apocalypse(wet, () => 0, () => {});
+  apocalypse(
+    wet,
+    () => 0,
+    () => {},
+  );
   expect(wet.disasters.filter((e) => e.kind === "fire")).toHaveLength(1);
 });
 
@@ -206,6 +222,10 @@ it("burning stores take food with them", () => {
   w.food = 50;
   w.villagers.forEach((v) => (v.dead = true));
   w.disasters = [{ kind: "fire", x: 16, y: 13, life: 100, people: [] }];
-  apocalypse(w, () => 0.99, () => {});
+  apocalypse(
+    w,
+    () => 0.99,
+    () => {},
+  );
   expect(w.food).toBeLessThan(50);
 });

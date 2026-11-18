@@ -19,13 +19,16 @@ import {
   DemoAdapter,
   ReplayAdapter,
   CodexAdapter,
+  ClaudeAdapter,
+  syncUsage,
+  dailyFresh,
   ingest,
 } from "./core/telemetry";
 import { loadWorld, saveWorld, restore } from "./core/persistence";
 import type { World, Scenario } from "./core/types";
 import { WorldRenderer } from "./world";
 import { daylight } from "./daylight";
-import { season, seasonNames } from "./core/seasons";
+import { daysToNextSeason, season, seasonNames } from "./core/seasons";
 import "./App.css";
 
 type Panel = "settings" | "chronicle" | "residents" | "about" | "data" | null;
@@ -82,11 +85,13 @@ function App() {
     [selected, setSelected] = useState<Selection>(null),
     [notice, setNotice] = useState(""),
     [saveStatus, setSaveStatus] = useState("Sauvegarde locale"),
-    [window, setWindow] = useState<"session" | "day" | "lifetime">("session"),
-    [compact, setCompact] = useState(false);
+    [focus, setFocus] = useState(
+      () => localStorage.getItem("tokenfall-ui") !== "full",
+    );
   const [reset, setReset] = useState(false),
     [importMode, setImportMode] = useState("codex"),
-    [zoom, setZoom] = useState(1);
+    [zoom, setZoom] = useState(1),
+    [syncStatus, setSyncStatus] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
   const running = useRef({ paused, speed }),
     selection = useRef(selected),
@@ -99,6 +104,38 @@ function App() {
     selection.current = selected;
   }, [paused, speed, selected]);
   const update = () => setView(structuredClone(world.current));
+  useEffect(() => {
+    if (!ready) return;
+    let live = true,
+      timer = 0;
+    const url = "http://127.0.0.1:5175/usage";
+    const poll = async () => {
+      try {
+        const res = await fetch(url, { cache: "no-store" });
+        if (!res.ok) throw Error(String(res.status));
+        const events = new ReplayAdapter().read(await res.text());
+        if (!live) return;
+        const first = localStorage.getItem("tokenfall-bridge-seen") !== "1";
+        const changed = syncUsage(world.current, events, first);
+        localStorage.setItem("tokenfall-bridge-seen", "1");
+        if (changed) update();
+        setSyncStatus(
+          `Synchronisé à ${new Date().toLocaleTimeString("fr-FR")} · ${events.length} tours suivis`,
+        );
+      } catch {
+        if (live)
+          setSyncStatus(
+            "Pont injoignable — lancez : node scripts/usage-server.mjs",
+          );
+      }
+      if (live) timer = setTimeout(poll, 15000) as unknown as number;
+    };
+    poll();
+    return () => {
+      live = false;
+      clearTimeout(timer);
+    };
+  }, [ready]);
   const announce = (s: string) => {
     setNotice(s);
     setTimeout(() => setNotice(""), 6500);
@@ -241,8 +278,7 @@ function App() {
     document.addEventListener("keydown", key);
     return () => document.removeEventListener("keydown", key);
   }, []);
-  const tokens = totals(w, window),
-    population = residents(w).length,
+  const population = residents(w).length,
     latest = w.chronicle[0];
   const provenance = [...new Set(w.usage.map((e) => e.provenance))];
   const badge =
@@ -257,7 +293,7 @@ function App() {
     setPanel(null);
   };
   const changeZoom = (z: number) => {
-    const v = Math.min(2.3, Math.max(0.55, z));
+    const v = Math.min(8, Math.max(0.4, z));
     setZoom(v);
     if (renderer.current) renderer.current.zoom = v;
     interaction.current = performance.now();
@@ -288,7 +324,9 @@ function App() {
       const events =
         importMode === "codex"
           ? new CodexAdapter().read(text)
-          : new ReplayAdapter().read(text);
+          : importMode === "claude"
+            ? new ClaudeAdapter().read(text)
+            : new ReplayAdapter().read(text);
       const copy = structuredClone(world.current);
       let count = 0;
       if (importMode !== "timed")
@@ -309,7 +347,7 @@ function App() {
         copy.replayOn = false;
         count = 0;
       }
-      if (importMode === "codex") {
+      if (importMode === "codex" || importMode === "claude") {
         delete copy.replay;
         copy.session = events[events.length - 1].session;
         copy.replayOn = false;
@@ -325,25 +363,8 @@ function App() {
       announce(error instanceof Error ? error.message : "Import impossible.");
     }
   };
-  const replay = () => {
-    const w = world.current;
-    if (w.replay) {
-      delete w.replay;
-      update();
-      return;
-    }
-    if (w.replayIndex >= 100) {
-      announce(
-        "Recommencez la démonstration dans les réglages pour rejouer ce scénario.",
-      );
-      return;
-    }
-    w.replayOn = !w.replayOn;
-    setPaused(false);
-    update();
-  };
   return (
-    <main className={compact ? "app compact" : "app"}>
+    <main className={focus ? "app focus" : "app"}>
       <a className="skip" href="#world-actions">
         Aller aux commandes du village
       </a>
@@ -382,7 +403,7 @@ function App() {
           drag.current = null;
         }}
         onPointerCancel={() => (drag.current = null)}
-        onWheel={(e) => changeZoom(zoom - e.deltaY * 0.001)}
+        onWheel={(e) => changeZoom(zoom * Math.exp(-e.deltaY * 0.002))}
       />
       <header className="topbar">
         <div className="wordmark">
@@ -423,8 +444,11 @@ function App() {
             {daylight(w.tick) < 0.5 ? "☾" : "☼"}
           </span>{" "}
           Jour {Math.floor(w.tick / 288) + 1} <i>·</i>{" "}
-          {seasonNames[season(w.tick)]} <i>·</i> {clock(w.tick)} <i>·</i>{" "}
-          {w.weather}
+          {seasonNames[season(w.tick)]}{" "}
+          <small title="Jours restants avant le changement de saison">
+            (encore {daysToNextSeason(w.tick)} j)
+          </small>{" "}
+          <i>·</i> {clock(w.tick)} <i>·</i> {w.weather}
         </p>
         <div className={`stage stage-${stage(w)}`}>
           <span />
@@ -447,12 +471,12 @@ function App() {
         </p>
       </aside>
       <div className="view-tools">
-        <button aria-label="Zoom avant" onClick={() => changeZoom(zoom + 0.15)}>
+        <button aria-label="Zoom avant" onClick={() => changeZoom(zoom * 1.3)}>
           +
         </button>
         <button
           aria-label="Zoom arrière"
-          onClick={() => changeZoom(zoom - 0.15)}
+          onClick={() => changeZoom(zoom / 1.3)}
         >
           −
         </button>
@@ -468,9 +492,13 @@ function App() {
           ⌖
         </button>
         <button
-          aria-label="Basculer la disposition compacte"
-          aria-pressed={compact}
-          onClick={() => setCompact((c) => !c)}
+          aria-label={focus ? "Afficher l’interface" : "Masquer l’interface"}
+          title={focus ? "Afficher l’interface" : "Masquer l’interface"}
+          aria-pressed={!focus}
+          onClick={() => {
+            localStorage.setItem("tokenfall-ui", focus ? "full" : "focus");
+            setFocus(!focus);
+          }}
         >
           ▣
         </button>
@@ -483,21 +511,10 @@ function App() {
         aria-label="État des réserves et de la consommation"
       >
         <div className="token-count">
-          <label htmlFor="time-window">
-            TOKENS{" "}
-            <select
-              id="time-window"
-              value={window}
-              onChange={(e) => setWindow(e.target.value as typeof window)}
-            >
-              <option value="session">CETTE SESSION</option>
-              <option value="day">AUJOURD’HUI (UTC)</option>
-              <option value="lifetime">TOUTE L’HISTOIRE</option>
-            </select>
-          </label>
+          <span>TOKENS AUJOURD’HUI</span>
           <strong>
-            {fmt(tokens.input + tokens.output)}
-            <small> / {fmt(w.settings.budget)}</small>
+            {fmt(dailyFresh(w).get(w.day) ?? 0)}
+            <small> / {fmt(w.budgetNow ?? w.settings.budget)}</small>
           </strong>
         </div>
         <div className="pressure-stat">
@@ -544,13 +561,6 @@ function App() {
             <span>garde-manger</span>
           </div>
         </div>
-        <button
-          className="explain"
-          aria-label="Comprendre la pression fictive"
-          onClick={() => toggle("about")}
-        >
-          i
-        </button>
       </section>
       <footer id="world-actions" className="bottom-bar">
         <div className="playback">
@@ -572,19 +582,6 @@ function App() {
               </button>
             ))}
           </div>
-          <span className="divider" />
-          <button
-            className="replay"
-            aria-pressed={w.replayOn || !!w.replay}
-            onClick={replay}
-          >
-            <span aria-hidden="true">▷</span>
-            {w.replay
-              ? "Arrêter le replay"
-              : w.replayOn
-                ? "Arrêter la démo"
-                : "Jouer la démo"}
-          </button>
         </div>
         <nav aria-label="Explorer le village">
           <button
@@ -604,7 +601,9 @@ function App() {
           <span />
           {saveStatus.startsWith("Échec")
             ? "Échec de sauvegarde"
-            : "Local · privé"}
+            : syncStatus.startsWith("Synchronisé")
+              ? "Suit votre usage · local"
+              : "Monde autonome · local"}
         </span>
       </footer>
       {!panel && !selected && (
@@ -1066,6 +1065,9 @@ function App() {
                   </div>
                 ))}
               </div>
+              <p className="hint" role="status">
+                {syncStatus || "Synchronisation automatique…"}
+              </p>
               <h3>Importer des métadonnées</h3>
               <div
                 className="accounting"
@@ -1097,6 +1099,9 @@ function App() {
                   onChange={(e) => setImportMode(e.target.value)}
                 >
                   <option value="codex">Codex exec — flux JSONL complet</option>
+                  <option value="claude">
+                    Claude Code / ADE — transcript JSONL
+                  </option>
                   <option value="replay">Événements normalisés — JSON</option>
                   <option value="timed">
                     Rejouer des événements datés — JSON

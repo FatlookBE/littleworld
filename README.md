@@ -33,6 +33,27 @@ Importer le résultat via **DÉMO → Format → Événements normalisés — JS
 
 Utiliser une capture complète identique pour les imports répétés. Ne pas concaténer des fragments repris : le flux documenté n’offre pas d’identifiant de tour stable, l’adaptateur utilise thread + ordre. Sans date fournie, la date est inconnue et exclue du total UTC du jour. Voir [les décisions et limites d’intégration](docs/codex-integration.md).
 
+### Synchronisation automatique (Claude Code + Codex)
+
+```sh
+node scripts/usage-server.mjs      # terminal 1 : pont local, lecture seule, 127.0.0.1:5175
+npm run dev -- --host 127.0.0.1    # terminal 2
+```
+
+L’app interroge le pont toutes les 15 secondes, sans bouton : si le pont tourne, le monde suit ton usage ; sinon il vit seul. Le budget s’adapte : il vaut deux fois la moyenne quotidienne des 7 derniers jours (cache exclu), donc une journée ordinaire donne environ 50 % de pression. Il lit les transcripts Claude Code (`~/.claude/projects`, qui couvrent aussi les chats ADE) et les sessions Codex (`~/.codex/sessions`) des 3 derniers jours, et n’expose que des compteurs. À la première activation l’historique existant est enregistré sans vider le village ; seule l’activité suivante crée de la pression. Le pont n’écoute que sur la boucle locale et refuse les autres origines.
+
+### Claude Code (et ADE)
+
+Claude Code, et donc les chats ADE qui s’appuient sur lui, écrit chaque session dans `~/.claude/projects/<projet>/<session>.jsonl`. Importer ce fichier via **DÉMO → Format → Claude Code / ADE — transcript JSONL** : seuls l’identifiant du message, la session, l’horodatage et les compteurs de tokens sont lus ; le contenu des conversations est ignoré et jamais conservé. Ré-importer le même fichier (même après de nouveaux messages) ne compte pas deux fois. Import toujours explicite, jamais automatique.
+
+**Directement depuis ADE** : ADE tient un registre par tour pour Claude et Codex (`ade usage turns`). Exporter les sept derniers jours, puis importer le fichier en **Événements normalisés — JSON** :
+
+```sh
+node scripts/ade-usage.mjs 7 > usage.json
+```
+
+Seuls identifiant de tour, session, heure, fournisseur et compteurs sont copiés (ni chemins, ni e-mail, ni modèle, ni coûts). Relancer le script puis ré-importer ne compte pas deux fois les mêmes tours. Dépend de la CLI `ade` installée.
+
 Schéma normalisé :
 
 ```json

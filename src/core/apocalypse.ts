@@ -59,7 +59,10 @@ export function apocalypse(
           seasonEffects[season(w.tick)].fire;
         const burning = (x: number, y: number) =>
           [...events, ...sparks].some(
-            (o) => o.kind === "fire" && o.life > 0 && Math.hypot(o.x - x, o.y - y) < 1,
+            (o) =>
+              o.kind === "fire" &&
+              o.life > 0 &&
+              Math.hypot(o.x - x, o.y - y) < 1,
           );
         const next = w.buildings
           .filter(
@@ -71,10 +74,17 @@ export function apocalypse(
           )
           .sort(
             (a, c) =>
-              Math.hypot(a.x - e.x, a.y - e.y) - Math.hypot(c.x - e.x, c.y - e.y),
+              Math.hypot(a.x - e.x, a.y - e.y) -
+              Math.hypot(c.x - e.x, c.y - e.y),
           )[0];
         if (next && random() < 0.35 * dry) {
-          sparks.push({ kind: "fire", x: next.x, y: next.y, life: 400, people: [] });
+          sparks.push({
+            kind: "fire",
+            x: next.x,
+            y: next.y,
+            life: 400,
+            people: [],
+          });
           remember(`Le vent porte les flammes jusqu’à ${next.name}.`);
         }
       }
@@ -167,7 +177,8 @@ export function apocalypse(
         w.cooperation = Math.min(100, w.cooperation + 3);
         for (const v of crew)
           for (const tie of v.ties)
-            if (e.people.includes(tie.id)) tie.bond = Math.min(100, tie.bond + 4);
+            if (e.people.includes(tie.id))
+              tie.bond = Math.min(100, tie.bond + 4);
         remember(
           `Le feu près de ${b?.name ?? "la place"} est éteint : ${names(crew)} ont fait la chaîne.`,
           crew[0].id,
@@ -281,7 +292,10 @@ function bucketLine(
           v.thirst < 85 &&
           Math.hypot(v.x - cx, v.y - cy) < 9,
       )
-      .sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy))
+      .sort(
+        (a, b) =>
+          Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy),
+      )
       .slice(0, 3 - e.people.length);
     const first = e.people.length === 0;
     for (const v of recruits) {

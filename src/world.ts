@@ -8,11 +8,7 @@ import { EnvironmentAtlas, buildingDamageStage } from "./environment";
 import { ResidentAtlas } from "./sprites";
 import { WaterLevel, Waterfall, waterHalfWidth } from "./water";
 import { daylight, goldenHour } from "./daylight";
-import {
-  autumnColour,
-  bareBranches,
-  snowCover,
-} from "./core/seasons";
+import { autumnColour, bareBranches, snowCover } from "./core/seasons";
 import type { World, Building, Villager } from "./core/types";
 
 type Point = [number, number];
@@ -941,6 +937,26 @@ export class WorldRenderer {
         }
       }
     }
+    // Soft contact shadow where the slab's lower edge meets the elephants.
+    {
+      const v = [
+        this.project(5, 29, -118),
+        this.project(29, 29, -126),
+        this.project(29, 5, -118),
+      ];
+      c.save();
+      c.lineJoin = "round";
+      c.lineCap = "round";
+      c.filter = `blur(${10 * s}px)`;
+      c.strokeStyle = "rgba(8,12,10,0.6)";
+      c.lineWidth = 26 * s;
+      c.beginPath();
+      c.moveTo(v[0][0], v[0][1] + 16 * s);
+      c.lineTo(v[1][0], v[1][1] + 16 * s);
+      c.lineTo(v[2][0], v[2][1] + 16 * s);
+      c.stroke();
+      c.restore();
+    }
     // The curtain hangs from the brink and thins with the displayed reserve.
     const level = this.waterLevel.shown ?? w.water,
       wetLevel = this.waterLevel.wet,
@@ -1242,7 +1258,8 @@ export class WorldRenderer {
       if (leaves > 0.15 && p < 0.8) {
         // A few leaves let go and tumble across the island.
         for (let i = 0; i < Math.round(16 * leaves); i++) {
-          const k = (this.time * (0.05 + noise(i, 41) * 0.04) + noise(i, 42)) % 1;
+          const k =
+            (this.time * (0.05 + noise(i, 41) * 0.04) + noise(i, 42)) % 1;
           const [lx, ly] = this.project(
             2 + noise(i, 43) * 25 + k * 5,
             2 + noise(i, 44) * 25 - k * 2,
@@ -1319,8 +1336,15 @@ export class WorldRenderer {
       const [x, y] = this.project(b.x + width / 2, b.y + depth / 2);
       const flicker =
         0.86 +
-        0.14 * Math.sin(this.time * 5.3 + b.id * 1.7) * Math.sin(this.time * 2.1 + b.id);
-      glow(x, y + 4 * s, 58 * s, night * 0.3 * flicker * (0.5 + b.condition / 200));
+        0.14 *
+          Math.sin(this.time * 5.3 + b.id * 1.7) *
+          Math.sin(this.time * 2.1 + b.id);
+      glow(
+        x,
+        y + 4 * s,
+        58 * s,
+        night * 0.3 * flicker * (0.5 + b.condition / 200),
+      );
     }
     // Walkers out after dark carry a small lantern.
     for (const v of w.villagers) {
@@ -1339,7 +1363,13 @@ export class WorldRenderer {
     for (const e of w.disasters ?? [])
       if (e.kind === "fire") {
         const [x, y] = this.project(e.x + 0.5, e.y + 0.5);
-        glow(x, y - 10 * s, 120 * s, night * 0.42 * (0.9 + 0.1 * Math.sin(this.time * 9 + e.x)), 1.3);
+        glow(
+          x,
+          y - 10 * s,
+          120 * s,
+          night * 0.42 * (0.9 + 0.1 * Math.sin(this.time * 9 + e.x)),
+          1.3,
+        );
       }
     c.restore();
   }
@@ -1583,7 +1613,12 @@ export class WorldRenderer {
     }
   }
   /** Water thrown along arcs into the flames, and the steam it raises. */
-  bucketSplashes(w: World, e: NonNullable<World["disasters"]>[number], x: number, y: number) {
+  bucketSplashes(
+    w: World,
+    e: NonNullable<World["disasters"]>[number],
+    x: number,
+    y: number,
+  ) {
     const c = this.ctx,
       s = this.scale,
       t = this.time;
@@ -1605,7 +1640,9 @@ export class WorldRenderer {
       c.globalAlpha = 0.7 * (1 - head);
       c.beginPath();
       for (let i = 0; i <= 6; i++) {
-        const [px, py] = arc(Math.max(0, head - 0.25) + (Math.min(head, 0.25) * i) / 6);
+        const [px, py] = arc(
+          Math.max(0, head - 0.25) + (Math.min(head, 0.25) * i) / 6,
+        );
         if (i) c.lineTo(px, py);
         else c.moveTo(px, py);
       }

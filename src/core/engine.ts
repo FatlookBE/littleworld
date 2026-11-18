@@ -2,13 +2,23 @@ import { updateNutrition } from "./nutrition";
 import { spreadDestination, moveResident } from "./crowd";
 import { apocalypse } from "./apocalypse";
 import type { World, Memory, Villager, Scenario } from "./types";
-import { totals, ingest, DemoAdapter } from "./telemetry";
+import {
+  totals,
+  ingest,
+  DemoAdapter,
+  dailyFresh,
+  effectiveBudget,
+  freshTokens,
+  isAdaptive,
+} from "./telemetry";
 import { findRoute, riverCenter } from "./navigation";
 import {
+  isSeasonStart,
   isWet,
   season,
   seasonEffects,
   seasonalWeather,
+  seasonArrival,
   seasonProgress,
 } from "./seasons";
 
@@ -147,6 +157,7 @@ export function createWorld(now = Date.now(), seed = 9137): World {
       retentionDays: 30,
       includeInput: true,
       includeOutput: true,
+      adaptive: true,
     },
     usage: [],
     pressure: 0,
@@ -367,6 +378,7 @@ function social(w: World, v: Villager) {
 }
 export function step(w: World) {
   w.tick++;
+  if (isSeasonStart(w.tick)) note(w, seasonArrival[season(w.tick)], "ordinary");
   if (w.replay) {
     const replay = w.replay;
     let processed = 0;
@@ -396,22 +408,25 @@ export function step(w: World) {
       );
     }
   }
-  const t = totals(
-    w,
-    w.settings.scenario === "persistent"
-      ? "lifetime"
-      : w.settings.scenario === "daily"
-        ? "day"
-        : "session",
-  );
-  const tokens =
-    (w.settings.includeInput ? t.input : 0) +
-    (w.settings.includeOutput ? t.output : 0);
+  const daily = dailyFresh(w);
+  const budget = (w.budgetNow = effectiveBudget(w, daily));
+  const tokens = isAdaptive(w)
+    ? (daily.get(w.day) ?? 0)
+    : freshTokens(
+        totals(
+          w,
+          w.settings.scenario === "persistent"
+            ? "lifetime"
+            : w.settings.scenario === "daily"
+              ? "day"
+              : "session",
+        ),
+        w.settings,
+      );
   if (w.tick - w.lastUsageTick > 100)
     w.relief = clamp(w.relief + 0.025 + w.cooperation * 0.00015);
   const target = clamp(
-    clamp(Math.pow(tokens / w.settings.budget, w.settings.curve) * 100) -
-      w.relief,
+    clamp(Math.pow(tokens / budget, w.settings.curve) * 100) - w.relief,
   );
   w.pressure += (target - w.pressure) * 0.012;
   const p = w.pressure / 100,
