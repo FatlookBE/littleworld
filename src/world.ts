@@ -1,3 +1,4 @@
+import { drawCritters } from "./critters";
 import { bridgeRows, riverCenter, riverHalfWidth } from "./core/navigation";
 import { remainsStage } from "./core/lifecycle";
 import { residentSkin } from "./sprites";
@@ -843,6 +844,8 @@ export class WorldRenderer {
       c.fill();
     }
     const [worldX, worldY] = this.project(14.5, 14.5);
+    if (!w.settings.reducedMotion)
+      drawCritters(c, this.time, this.width, this.height, worldX, worldY, s);
     if (!this.foundation.draw(c, worldX, worldY, s, this.time)) {
       if (!this.environment.ready) {
         this.shape(
