@@ -9,6 +9,58 @@ const hash = (n: number) => {
   return x - Math.floor(x);
 };
 
+let fauna: HTMLImageElement | undefined;
+function paintFauna(
+  c: CanvasRenderingContext2D,
+  cell: number,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  time: number,
+) {
+  if (!fauna) {
+    fauna = new Image();
+    fauna.src = "/assets/void-fauna.png";
+  }
+  if (!fauna.complete || !fauna.naturalWidth) return false;
+  const half = fauna.width / 2;
+  // Bend the tentacles and tail while keeping the bell and head steady.
+  const bands = 16;
+  for (let i = 0; i < bands; i++) {
+    const u = i / bands;
+    if (cell === 0) {
+      const bend =
+        Math.max(0, u - 0.35) * Math.sin(time * 2 - u * 4) * width * 0.1;
+      c.drawImage(
+        fauna,
+        0,
+        u * fauna.height,
+        half,
+        fauna.height / bands,
+        x + bend,
+        y + u * height,
+        width,
+        height / bands + 0.35,
+      );
+    } else {
+      const beat = Math.max(0, 0.5 - u) * Math.sin(time * 4) * height * 0.2;
+      c.drawImage(
+        fauna,
+        half * (1 + u),
+        0,
+        half / bands,
+        fauna.height,
+        x + u * width,
+        y + beat,
+        width / bands + 0.35,
+        height,
+      );
+    }
+  }
+  return true;
+}
+
 function jellyfish(
   c: CanvasRenderingContext2D,
   x: number,
@@ -23,6 +75,7 @@ function jellyfish(
   glow.addColorStop(1, `hsla(${hue},80%,65%,0)`);
   c.fillStyle = glow;
   c.fillRect(x - r * 3, y - r * 3, r * 6, r * 6);
+  if (paintFauna(c, 0, x - r * 1.5, y - r, 3 * r, 3.8 * r * pulse, t)) return;
   c.strokeStyle = `hsla(${hue},70%,75%,0.45)`;
   c.lineWidth = Math.max(1, r * 0.08);
   for (let i = -2; i <= 2; i++) {
@@ -66,30 +119,32 @@ function whale(
   c.translate(x, y + Math.sin(t * 1.4) * 5 * s);
   c.scale(dir, 1);
   c.rotate(Math.sin(t * 1.4 + 1) * 0.05);
-  c.fillStyle = "#3d5a6e";
-  c.beginPath();
-  c.ellipse(0, 0, 26 * s, 11 * s, 0, 0, Math.PI * 2);
-  c.fill();
-  c.fillStyle = "#6c8fa5";
-  c.beginPath();
-  c.ellipse(2 * s, 4 * s, 20 * s, 5 * s, 0, 0, Math.PI);
-  c.fill();
-  // Tail, flapping.
-  c.save();
-  c.translate(-24 * s, 0);
-  c.rotate(Math.sin(t * 4) * 0.35);
-  c.fillStyle = "#3d5a6e";
-  c.beginPath();
-  c.moveTo(0, 0);
-  c.quadraticCurveTo(-9 * s, -4 * s, -14 * s, -11 * s);
-  c.quadraticCurveTo(-10 * s, 0, -14 * s, 11 * s);
-  c.quadraticCurveTo(-9 * s, 4 * s, 0, 0);
-  c.fill();
-  c.restore();
-  c.fillStyle = "#101820";
-  c.beginPath();
-  c.arc(14 * s, -2 * s, 1.5 * s, 0, Math.PI * 2);
-  c.fill();
+  if (!paintFauna(c, 1, -42 * s, -28 * s, 84 * s, 56 * s, t)) {
+    c.fillStyle = "#3d5a6e";
+    c.beginPath();
+    c.ellipse(0, 0, 26 * s, 11 * s, 0, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = "#6c8fa5";
+    c.beginPath();
+    c.ellipse(2 * s, 4 * s, 20 * s, 5 * s, 0, 0, Math.PI);
+    c.fill();
+    // Tail, flapping.
+    c.save();
+    c.translate(-24 * s, 0);
+    c.rotate(Math.sin(t * 4) * 0.35);
+    c.fillStyle = "#3d5a6e";
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.quadraticCurveTo(-9 * s, -4 * s, -14 * s, -11 * s);
+    c.quadraticCurveTo(-10 * s, 0, -14 * s, 11 * s);
+    c.quadraticCurveTo(-9 * s, 4 * s, 0, 0);
+    c.fill();
+    c.restore();
+    c.fillStyle = "#101820";
+    c.beginPath();
+    c.arc(14 * s, -2 * s, 1.5 * s, 0, Math.PI * 2);
+    c.fill();
+  }
   // Spout of little droplets.
   c.fillStyle = "#cfe8f288";
   for (let i = 0; i < 6; i++) {

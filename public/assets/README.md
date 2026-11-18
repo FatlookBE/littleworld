@@ -60,3 +60,5 @@ Le chargement recale chaque couronne et largeur de carapace sur les mêmes appui
 ## Actions des habitants — 18 novembre 2026
 
 `residents-gather.png`, `residents-work.png`, `residents-drink.png`, `residents-eat.png` : quatre planches transparentes 1536 × 1024, six poses × quatre identités, générées avec l’outil intégré `image_gen` d’après `residents-hit.png`. Prompts complets et règles de lecture : `docs/resident-action-assets.md`. Six poses/séquence, cinq poses/seconde simulée, déclenchement à destination, priorité marche/combat/coups et ressources vérifiées.
+
+Les planches `elephant-decayed.png` et `turtle-decayed.png` ont été générées avec ImageGen à partir des cycles de poses des porteurs. La planche `void-fauna.png` contient une méduse à bois et une baleine cosmique, générées dans le même style peint.
