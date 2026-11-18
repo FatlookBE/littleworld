@@ -14,6 +14,21 @@
   display: block;
   touch-action: none;
   cursor: grab;
+  /* Soft edges: the world melts into the night instead of being cut. */
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 12%,
+    #000 72%,
+    transparent 96%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 12%,
+    #000 72%,
+    transparent 96%
+  );
 }
 .world:active {
   cursor: grabbing;
@@ -231,6 +246,13 @@
 }
 .token-count {
   min-width: 183px;
+}
+.token-count > span {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  color: #aeb89f;
+  margin-bottom: 9px;
 }
 .token-count label {
   display: block;

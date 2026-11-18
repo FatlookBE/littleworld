@@ -66,6 +66,8 @@ export interface Settings {
   retentionDays: number;
   includeInput: boolean;
   includeOutput: boolean;
+  /** Budget follows the average daily usage of past days (default on). */
+  adaptive?: boolean;
 }
 export interface World {
   disasters?: import("./apocalypse").Disaster[];
@@ -78,6 +80,8 @@ export interface World {
   settings: Settings;
   usage: UsageEvent[];
   pressure: number;
+  /** Budget in force this tick (adaptive or fixed); derived, not authoritative. */
+  budgetNow?: number;
   relief: number;
   lastUsageTick: number;
   water: number;

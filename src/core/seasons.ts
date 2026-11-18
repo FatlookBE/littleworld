@@ -12,6 +12,10 @@ export const season = (tick: number) =>
 export const seasonProgress = (tick: number) =>
   (tick % SEASON_TICKS) / SEASON_TICKS;
 
+/** Whole village days left before the season changes (≥ 1). */
+export const daysToNextSeason = (tick: number) =>
+  DAYS_PER_SEASON - Math.floor((tick % SEASON_TICKS) / 288);
+
 const ramp = (a: number, b: number, v: number) => {
   const t = Math.max(0, Math.min(1, (v - a) / (b - a)));
   return t * t * (3 - 2 * t);
@@ -45,7 +49,8 @@ export function seasonalWeather(w: World, p: number) {
   const s = season(w.tick),
     slot = Math.floor(w.tick / 150) % 5;
   if (p > 0.72) return "Vent de poussière";
-  if (wetSlots[s].includes(slot)) return s === 3 ? "Neige légère" : "Pluie légère";
+  if (wetSlots[s].includes(slot))
+    return s === 3 ? "Neige légère" : "Pluie légère";
   if (p > 0.4 || (s === 1 && slot === 2)) return "Chaleur sèche";
   return s === 3 ? "Ciel froid" : "Ciel clair";
 }

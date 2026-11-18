@@ -262,6 +262,7 @@ describe("simulation", () => {
   it("pressure reduces production, crop health and water compared with control", () => {
     const healthy = createWorld(0),
       dry = createWorld(0);
+    healthy.settings.adaptive = dry.settings.adaptive = false;
     ingest(dry, usage({ input: 100000, output: 0 }));
     ticks(healthy, 1200);
     ticks(dry, 1200);
@@ -290,6 +291,7 @@ describe("simulation", () => {
   });
   it("dies when health is exhausted under scarcity, preserves people and their history", () => {
     const w = createWorld(0);
+    w.settings.adaptive = false;
     w.water = 0;
     w.food = 0;
     w.pressure = 100;
@@ -311,6 +313,7 @@ describe("simulation", () => {
   });
   it("recovers with inactivity and deliberate cooperation even far beyond budget", () => {
     const w = createWorld(0);
+    w.settings.adaptive = false;
     ingest(w, usage({ input: 1000000 }));
     ticks(w, 500);
     const pressure = w.pressure;
