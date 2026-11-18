@@ -1,8 +1,12 @@
 import { findRoute } from "./navigation";
 import type { World } from "./types";
 import { isWet, season, seasonEffects } from "./seasons";
+import { daylight } from "../daylight";
+export type Species = "horned" | "wolf" | "wraith";
 export interface Disaster {
-  kind: "fire" | "monster" | "fight";
+  kind: "fire" | "monster" | "fight" | "quake" | "blight" | "plague";
+  /** Monsters only; absent means the original horned creature. */
+  species?: Species;
   x: number;
   y: number;
   life: number;
@@ -25,6 +29,10 @@ export function apocalypse(
     sparks: Disaster[] = [];
   for (const e of events) {
     e.life--;
+    if (e.kind === "quake" || e.kind === "blight" || e.kind === "plague") {
+      widespread(w, e, alive, random, remember);
+      continue;
+    }
     if (e.kind === "fight") {
       if (e.people.length !== 2 || e.people[0] === e.people[1]) {
         e.life = 0;
@@ -89,7 +97,34 @@ export function apocalypse(
         }
       }
     }
-    if (e.kind === "monster") {
+    if (e.kind === "monster" && e.species === "wraith") {
+      // Spectres drift toward the living and sap their courage; dawn dissolves them.
+      if (daylight(w.tick) > 0.6) e.life = 0;
+      const prey = alive.reduce<(typeof alive)[number] | undefined>(
+        (best, v) =>
+          !best ||
+          Math.hypot(v.x - e.x, v.y - e.y) <
+            Math.hypot(best.x - e.x, best.y - e.y)
+            ? v
+            : best,
+        undefined,
+      );
+      if (prey) {
+        const d = Math.hypot(prey.x - e.x, prey.y - e.y);
+        if (d > 1) {
+          e.x += ((prey.x - e.x) / d) * 0.03;
+          e.y += ((prey.y - e.y) / d) * 0.03;
+        }
+      }
+      for (const v of alive)
+        if (Math.hypot(v.x - e.x, v.y - e.y) < 3.2) {
+          v.morale = Math.max(0, v.morale - 0.35);
+          v.energy = Math.max(0, v.energy - 0.08);
+          if (w.tick % 20 === 0) v.action = "Frissonne devant une ombre pâle";
+        }
+    } else if (e.kind === "monster") {
+      const speed = e.species === "wolf" ? 0.1 : 0.045,
+        bite = e.species === "wolf" ? 2 : 3;
       const attacking = e.attackAt !== undefined && w.tick - e.attackAt < 8;
       const victim = attacking
         ? alive.find((v) => v.id === e.people[0])
@@ -107,7 +142,7 @@ export function apocalypse(
         if (attacking) {
           // Damage occurs once at the impact pose; a fleeing victim can evade it.
           if (w.tick === e.attackAt! + 4 && d <= 1.8) {
-            victim.health = Math.max(0, victim.health - 3);
+            victim.health = Math.max(0, victim.health - bite);
             victim.hitAt = w.tick;
             victim.hitSide = victim.x - e.x - (victim.y - e.y) >= 0 ? 1 : -1;
             victim.action = "Encaisse le coup d’une créature";
@@ -119,8 +154,8 @@ export function apocalypse(
           e.attackAt = w.tick;
           e.people = [victim.id];
         } else if (d > 1) {
-          e.x += ((victim.x - e.x) / d) * 0.045;
-          e.y += ((victim.y - e.y) / d) * 0.045;
+          e.x += ((victim.x - e.x) / d) * speed;
+          e.y += ((victim.y - e.y) / d) * speed;
         }
       }
     }
@@ -143,9 +178,11 @@ export function apocalypse(
           v.action =
             e.kind === "fire"
               ? "Fuit les flammes"
-              : e.kind === "fight"
-                ? "S’écarte de la bagarre"
-                : "Recule devant une créature";
+              : e.species === "wolf"
+                ? "Fuit devant les loups"
+                : e.kind === "fight"
+                  ? "S’écarte de la bagarre"
+                  : "Recule devant une créature";
         if (w.tick % 15 === 0) {
           const dx = v.x - e.x,
             dy = v.y - e.y,
@@ -221,6 +258,84 @@ export function apocalypse(
       people: [],
     });
     remember("Une silhouette cornue sort de la forêt. Les enfants se cachent.");
+  }
+  const month = season(w.tick),
+    night = daylight(w.tick) < 0.4;
+  const has = (k: Disaster["kind"]) => events.some((e) => e.kind === k);
+  if (
+    events.length < 11 &&
+    p > 55 &&
+    (month === 3 || night) &&
+    events.filter((e) => e.kind === "monster").length < 4 &&
+    random() < 0.4
+  ) {
+    const y = 4 + random() * 20;
+    for (const dy of [0, 1.5])
+      events.push({
+        kind: "monster",
+        species: "wolf",
+        x: 25,
+        y: Math.min(28, y + dy),
+        life: 700,
+        people: [],
+      });
+    remember("Des hurlements dans la forêt : une meute approche du village.");
+  }
+  if (
+    events.length < 12 &&
+    p > 60 &&
+    night &&
+    !events.some((e) => e.species === "wraith") &&
+    random() < 0.35
+  ) {
+    events.push({
+      kind: "monster",
+      species: "wraith",
+      x: 3,
+      y: 4 + random() * 20,
+      life: 400,
+      people: [],
+    });
+    remember(
+      "Une ombre pâle glisse entre les maisons. Les chandelles vacillent.",
+    );
+  }
+  if (events.length < 12 && p > 65 && !has("quake") && random() < 0.12) {
+    events.push({ kind: "quake", x: 14, y: 14, life: 60, people: [] });
+    remember("La terre tremble sous Val-des-Saules. Les poutres craquent.");
+  }
+  if (
+    events.length < 12 &&
+    p > 45 &&
+    (month === 1 || month === 2) &&
+    w.moisture < 55 &&
+    !has("blight") &&
+    random() < 0.3
+  ) {
+    events.push({ kind: "blight", x: 14, y: 14, life: 300, people: [] });
+    remember("Un nuage de sauterelles s’abat sur les champs.");
+  }
+  if (
+    events.length < 12 &&
+    p > 55 &&
+    w.food < 50 &&
+    !has("plague") &&
+    random() < 0.3
+  ) {
+    const first = alive[Math.floor(random() * alive.length)];
+    if (first) {
+      events.push({
+        kind: "plague",
+        x: 14,
+        y: 14,
+        life: 500,
+        people: [first.id],
+      });
+      remember(
+        `${first.name} est pris de fièvre. On redoute la contagion.`,
+        first.id,
+      );
+    }
   }
   if (events.length < 12 && p > 42 && w.food < 40) {
     const a = alive[Math.floor(random() * alive.length)],
@@ -347,5 +462,54 @@ function bucketLine(
           e.people = e.people.filter((p) => p !== id);
       }
     }
+  }
+}
+
+/** Disasters that strike the whole village rather than a spot on the map. */
+function widespread(
+  w: World,
+  e: Disaster,
+  alive: World["villagers"],
+  random: () => number,
+  remember: (text: string, person?: number, kind?: "hope" | "warning") => void,
+) {
+  if (e.kind === "quake") {
+    for (const b of w.buildings) b.condition = Math.max(0, b.condition - 0.12);
+    for (const v of alive) v.morale = Math.max(0, v.morale - 0.08);
+    if (e.life === 0)
+      remember("Le tremblement s’apaise ; les maisons tiennent, abîmées.");
+  } else if (e.kind === "blight") {
+    w.food = Math.max(0, w.food - 0.03);
+    w.vegetation = Math.max(0, w.vegetation - 0.04);
+    if (isWet(w)) e.life -= 2;
+    if (e.life <= 0)
+      remember("Les sauterelles repartent, laissant des champs ras.");
+  } else {
+    e.people = e.people.filter((id) => !w.villagers[id]?.dead);
+    for (const id of e.people) {
+      const v = w.villagers[id];
+      v.health = Math.max(0, v.health - 0.03);
+      v.route = [];
+      v.target = [v.x, v.y];
+      v.nextDecision = w.tick + 5;
+      v.action = "Alité, brûlant de fièvre";
+      if (w.tick % 40 === 0 && e.people.length < 5 && random() < 0.5) {
+        const next = alive.find(
+          (o) =>
+            !e.people.includes(o.id) && Math.hypot(o.x - v.x, o.y - v.y) < 2.5,
+        );
+        if (next) {
+          e.people.push(next.id);
+          remember(`${next.name} tombe malade à son tour.`, next.id);
+        }
+      }
+    }
+    if (!e.people.length) e.life = 0;
+    if (e.life <= 0 && e.people.length)
+      remember(
+        "La fièvre retombe. Les malades se relèvent, amaigris.",
+        e.people[0],
+        "hope",
+      );
   }
 }

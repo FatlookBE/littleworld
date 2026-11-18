@@ -1,3 +1,4 @@
+import { drawCritters } from "./critters";
 import { bridgeRows, riverCenter, riverHalfWidth } from "./core/navigation";
 import { remainsStage } from "./core/lifecycle";
 import { residentSkin } from "./sprites";
@@ -78,6 +79,8 @@ export class WorldRenderer {
   ]);
   zoom = 1;
   pan: Point = [0, 0];
+  /** Transient camera offset (earthquakes); never saved or user-driven. */
+  shake: Point = [0, 0];
   hits: Hit[] = [];
   width = 0;
   height = 0;
@@ -103,11 +106,15 @@ export class WorldRenderer {
   }
   project(x: number, y: number, z = 0): Point {
     return [
-      (x - y) * 23 * this.scale + this.width * 0.5 + this.pan[0],
+      (x - y) * 23 * this.scale +
+        this.width * 0.5 +
+        this.pan[0] +
+        this.shake[0],
       (x + y - 28) * 11.5 * this.scale +
         (90 + Math.max(220, this.height - 280) * 0.22) -
         z * this.scale +
-        this.pan[1],
+        this.pan[1] +
+        this.shake[1],
     ];
   }
   poly(points: Point[], fill: string, stroke?: string) {
@@ -804,6 +811,14 @@ export class WorldRenderer {
     const c = this.ctx,
       p = w.pressure / 100,
       s = this.scale;
+    const quake = w.settings.reducedMotion
+      ? undefined
+      : w.disasters?.find((e) => e.kind === "quake");
+    const power = quake ? Math.min(1, quake.life / 20) * 5 * s : 0;
+    this.shake = [
+      Math.sin(time * 61) * power,
+      Math.cos(time * 53) * power * 0.7,
+    ];
     this.hits = [];
     c.clearRect(0, 0, this.width, this.height);
     const bg = c.createRadialGradient(
@@ -829,6 +844,8 @@ export class WorldRenderer {
       c.fill();
     }
     const [worldX, worldY] = this.project(14.5, 14.5);
+    if (!w.settings.reducedMotion)
+      drawCritters(c, this.time, this.width, this.height, worldX, worldY, s);
     if (!this.foundation.draw(c, worldX, worldY, s, this.time)) {
       if (!this.environment.ready) {
         this.shape(
@@ -1416,6 +1433,24 @@ export class WorldRenderer {
     }
     for (const e of w.disasters ?? []) {
       const [x, y] = this.project(e.x + 0.5, e.y + 0.5);
+      if (e.kind === "blight") {
+        // Swarm of locusts drifting across the fields.
+        c.save();
+        c.fillStyle = "#3b2e16";
+        const n = w.settings.reducedMotion ? 12 : 46;
+        for (let i = 0; i < n; i++) {
+          const a = this.time * (0.6 + noise(i, 1)) + i * 2.4;
+          c.fillRect(
+            x + Math.cos(a) * (60 + noise(i, 2) * 170) * s,
+            y - 20 * s + Math.sin(a * 1.3) * (30 + noise(i, 3) * 80) * s,
+            2.5 * s,
+            1.6 * s,
+          );
+        }
+        c.restore();
+        continue;
+      }
+      if (e.kind === "quake" || e.kind === "plague") continue;
       if (e.kind === "fire") {
         const glow = c.createRadialGradient(
           x,
@@ -1502,7 +1537,15 @@ export class WorldRenderer {
             ? victim.x - e.x - (victim.y - e.y) < 0
             : e.x > 14;
           this.ellipse(x, y, 21, 7, "#100f1f66");
-          this.monsters.draw(c, phase, x, y + 3 * s, 73 * s, mirror);
+          c.save();
+          if (e.species === "wolf") c.filter = "grayscale(0.9) brightness(0.8)";
+          if (e.species === "wraith") {
+            c.filter = "grayscale(1) brightness(1.7) hue-rotate(180deg)";
+            c.globalAlpha = 0.45 + Math.sin(this.time * 3) * 0.12;
+          }
+          const size = e.species === "wolf" ? 44 : 73;
+          this.monsters.draw(c, phase, x, y + 3 * s, size * s, mirror);
+          c.restore();
           continue;
         }
         if (this.environment.ready) {

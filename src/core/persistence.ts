@@ -213,7 +213,12 @@ export function restore(text: string): World {
       !w.disasters.every(
         (e) =>
           e &&
-          ["fire", "monster", "fight"].includes(e.kind) &&
+          ["fire", "monster", "fight", "quake", "blight", "plague"].includes(
+            e.kind,
+          ) &&
+          (e.species === undefined ||
+            (e.kind === "monster" &&
+              ["horned", "wolf", "wraith"].includes(e.species))) &&
           point([e.x, e.y]) &&
           finite(e.life, 0, 2000) &&
           (e.attackAt === undefined ||
