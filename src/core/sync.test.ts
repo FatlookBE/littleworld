@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { createWorld } from "./engine";
+import { createWorld, step } from "./engine";
 import { syncUsage } from "./telemetry";
 import type { UsageEvent } from "./types";
 
@@ -42,4 +42,20 @@ it("adaptive budget is twice the mean of past days, cache excluded", () => {
   );
   expect(dailyFresh(w).get("2026-11-16")).toBe(50000);
   expect(effectiveBudget(w)).toBe(90000);
+});
+
+it("keeps daily usage above the adaptive budget visible after full recovery", () => {
+  const w = createWorld(Date.parse("2026-11-18T12:00:00Z"));
+  syncUsage(
+    w,
+    [
+      { ...ev("yesterday", 0), at: "2026-11-17T12:00:00Z", input: 750000 },
+      { ...ev("today", 0), input: 2500000 },
+    ],
+    true,
+  );
+  w.relief = 100;
+  step(w);
+  expect(w.budgetNow).toBe(1500000);
+  expect(w.pressure).toBeCloseTo((2500000 / 1500000 - 1) * 100 * 0.012);
 });

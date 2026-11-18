@@ -60,3 +60,7 @@ Le chargement recale chaque couronne et largeur de carapace sur les mêmes appui
 ## Actions des habitants — 18 novembre 2026
 
 `residents-gather.png`, `residents-work.png`, `residents-drink.png`, `residents-eat.png` : quatre planches transparentes 1536 × 1024, six poses × quatre identités, générées avec l’outil intégré `image_gen` d’après `residents-hit.png`. Prompts complets et règles de lecture : `docs/resident-action-assets.md`. Six poses/séquence, cinq poses/seconde simulée, déclenchement à destination, priorité marche/combat/coups et ressources vérifiées.
+
+Les planches `elephant-decayed.png` et `turtle-decayed.png` ont été générées avec ImageGen à partir des cycles de poses des porteurs. La planche `void-fauna.png` contient une méduse à bois et une baleine cosmique, générées dans le même style peint.
+
+Les planches générées avec ImageGen `wraith-cycle.png` (4 × 2, vol en boucle) et `wolf-cycle.png` (4 × 4, course puis morsure) utilisent des cellules transparentes. Le spectre porte une cape gris-vert en lambeaux et une agrafe ocre. Le loup au pelage gris est peint de trois quarts, avec la même lumière chaude venant du haut à gauche.

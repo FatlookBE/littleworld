@@ -1,6 +1,23 @@
 import { TurtleDetail } from "./turtle-detail";
 import { AnimationAtlas } from "./animation";
 import { carrierPose, turtlePose } from "./carrier-animation";
+/**
+ * How rotten the world looks, 0 (healthy) to 1 (agonising): mostly the
+ * pressure, worsened by thirst, hunger and the dead.
+ */
+export const decayOf = (w: {
+  pressure: number;
+  water: number;
+  food: number;
+  villagers: { dead: boolean }[];
+}) => {
+  const dead = w.villagers.filter((v) => v.dead).length / w.villagers.length;
+  const lack = (200 - w.water - w.food) / 200;
+  return Math.max(
+    0,
+    Math.min(1, (w.pressure / 100) * 0.7 + lack * 0.15 + dead * 0.15),
+  );
+};
 /** Individually animated painted carriers. Every pose uses a constant scale and anchor. */
 export class WorldFoundation {
   image = new Image();
@@ -14,6 +31,15 @@ export class WorldFoundation {
     true,
   );
   turtle = new AnimationAtlas("/assets/turtle-swim.png", 4, 4, 0, false, true);
+  private ruinedTurtle = new TurtleDetail("ruined");
+  private ruinedElephants = new AnimationAtlas(
+    "/assets/elephant-ruined.webp",
+    4,
+    2,
+    0,
+    false,
+    true,
+  );
   ready = false;
   constructor() {
     this.image.onload = () => {
@@ -27,20 +53,24 @@ export class WorldFoundation {
     cy: number,
     scale: number,
     time = 0,
+    decay = 0,
   ) {
     if (!this.ready) return false;
-    // The shell is registered at its crown, not at the moving flipper tips.
-    if (
-      !this.turtleDetail.draw(
+    const pose = turtlePose(time);
+    const turtle =
+      decay >= 0.36 && this.ruinedTurtle.ready
+        ? this.ruinedTurtle
+        : this.turtleDetail;
+    if (!turtle.draw(ctx, pose, cx, cy + 520 * scale, 1050 * scale))
+      this.turtle.draw(
         ctx,
-        turtlePose(time),
+        pose,
         cx,
         cy + 520 * scale,
         1050 * scale,
-      )
-    ) {
-      this.turtle.draw(ctx, 0, cx, cy + 520 * scale, 1050 * scale, false, 0.22);
-    }
+        false,
+        0.22,
+      );
     // All four carriers sit behind the rock lip. Taller shoulders enter its
     // underside while the fixed foot anchors remain on the shell dome.
     for (const [id, x, y, height, mirror] of [
@@ -49,7 +79,12 @@ export class WorldFoundation {
       [2, -145, 855, 510, 0],
       [3, 145, 855, 510, 1],
     ]) {
-      this.elephants.draw(
+      // Stagger the herd's transformation, showing one painted pose per animal.
+      const atlas =
+        decay >= 0.12 + id * 0.14 && this.ruinedElephants.ready
+          ? this.ruinedElephants
+          : this.elephants;
+      atlas.draw(
         ctx,
         carrierPose(time, id),
         cx + x * scale,
