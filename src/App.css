@@ -1547,3 +1547,21 @@ body {
 .app.focus .skip {
   display: none;
 }
+
+.demo-nav {
+  position: absolute;
+  z-index: 4;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #17201f;
+  color: #efe5cc;
+  padding: .6rem .9rem;
+  border-radius: .5rem;
+  display: flex;
+  align-items: center;
+  gap: .8rem;
+  white-space: nowrap;
+}
+.demo-nav a { color: inherit; }
+.app:not(.focus) > a.demo-nav { bottom: auto; top: 5rem; }

@@ -54,6 +54,8 @@ export class WorldRenderer {
     false,
     true,
   );
+  wolves = new AnimationAtlas("/assets/wolf-cycle.png", 4, 4, 0, false, true);
+  wraiths = new AnimationAtlas("/assets/wraith-cycle.png", 4, 2, 0, false, true);
   flames = new AnimationAtlas("/assets/flames-cycle.png", 4, 3, 0, true);
   previousPositions = new Map<number, Point>();
   waterLevel = new WaterLevel();
@@ -1417,21 +1419,6 @@ export class WorldRenderer {
           "#3e352d",
           2,
         );
-        for (let i = 0; i < 7; i++) {
-          const [rx, ry] = this.project(
-            b.x + noise(i, b.id) * 3,
-            b.y + 2 + noise(b.id, i),
-          );
-          this.poly(
-            [
-              [rx, ry - 3 * s],
-              [rx + 5 * s, ry],
-              [rx, ry + 3 * s],
-              [rx - 4 * s, ry],
-            ],
-            i % 2 ? "#775d45" : "#a17b55",
-          );
-        }
       }
     }
     for (const e of w.disasters ?? []) {
@@ -1526,29 +1513,31 @@ export class WorldRenderer {
           );
         }
       } else if (e.kind === "monster") {
-        if (this.monsters.ready) {
-          const age = e.attackAt === undefined ? Infinity : w.tick - e.attackAt;
-          const attacking = age >= 0 && age < 8;
-          const phase = attacking
-            ? 8 +
-              (w.settings.reducedMotion
-                ? 3
-                : Math.min(7, Math.floor(Math.max(0, t / 0.2 - e.attackAt!))))
-            : loopFrame(t, 8, 8, e.x + e.y, w.settings.reducedMotion);
-          const victim = w.villagers[e.people[0]];
-          const mirror = victim
-            ? victim.x - e.x - (victim.y - e.y) < 0
-            : e.x > 14;
-          this.ellipse(x, y, 21, 7, "#100f1f66");
-          c.save();
-          if (e.species === "wolf") c.filter = "grayscale(0.9) brightness(0.8)";
-          if (e.species === "wraith") {
-            c.filter = "grayscale(1) brightness(1.7) hue-rotate(180deg)";
-            c.globalAlpha = 0.45 + Math.sin(this.time * 3) * 0.12;
+        const age = e.attackAt === undefined ? Infinity : w.tick - e.attackAt;
+        const attacking = age >= 0 && age < 8;
+        const phase = attacking
+          ? 8 +
+            (w.settings.reducedMotion
+              ? 3
+              : Math.min(7, Math.floor(Math.max(0, t / 0.2 - e.attackAt!))))
+          : loopFrame(t, 8, 8, e.x + e.y, w.settings.reducedMotion);
+        const victim = w.villagers[e.people[0]];
+        const mirror = victim
+          ? victim.x - e.x - (victim.y - e.y) < 0
+          : e.x > 14;
+        if (e.species === "wolf" || e.species === "wraith") {
+          this.ellipse(x, y, 18, 5, "#10132155");
+          if (e.species === "wolf") {
+            this.wolves.draw(c, phase, x, y, 49 * s, mirror);
+          } else {
+            const drift = loopFrame(t, 8, 5, 0, w.settings.reducedMotion);
+            this.wraiths.draw(c, drift, x, y - 7 * s, 80 * s, mirror, 0.96);
           }
-          const size = e.species === "wolf" ? 44 : 73;
-          this.monsters.draw(c, phase, x, y + 3 * s, size * s, mirror);
-          c.restore();
+          continue;
+        }
+        if (this.monsters.ready) {
+          this.ellipse(x, y, 21, 7, "#100f1f66");
+          this.monsters.draw(c, phase, x, y + 3 * s, 73 * s, mirror);
           continue;
         }
         if (this.environment.ready) {

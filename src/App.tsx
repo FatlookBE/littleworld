@@ -470,6 +470,11 @@ function App() {
               : "Quelqu’un a encore laissé la porte du jardin ouverte."}
         </p>
       </aside>
+      {ready && population === 0 && (
+        <a className="demo-nav" href="?demo=degradation">
+          Voir la dégradation en accéléré
+        </a>
+      )}
       <div className="view-tools">
         <button aria-label="Zoom avant" onClick={() => changeZoom(zoom * 1.3)}>
           +
@@ -1068,6 +1073,7 @@ function App() {
               <p className="hint" role="status">
                 {syncStatus || "Synchronisation automatique…"}
               </p>
+              <a href="?demo=degradation">Voir la dégradation en accéléré</a>
               <h3>Importer des métadonnées</h3>
               <div
                 className="accounting"

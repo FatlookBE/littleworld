@@ -1,9 +1,24 @@
+// Eye sockets in the local coordinates of each 768 × 1024 swimming pose.
+const eyeCenters = [
+  [276, 585],
+  [274, 585],
+  [262, 565],
+  [259, 565],
+  [245, 570],
+  [238, 569],
+  [251, 560],
+  [250, 560],
+] as const;
+const eyeRadiusX = 25,
+  eyeRadiusY = 18;
+
 /** Large two-pose sheets preserve painted detail when the world is zoomed in. */
 export class TurtleDetail {
   images: HTMLImageElement[] = [];
   ready = false;
+  private eye = document.createElement("canvas");
   private anchors: { top: number; crownX: number; shellWidth: number }[] = [];
-  constructor() {
+  constructor(variant: "healthy" | "ruined" = "healthy") {
     let loaded = 0;
     for (let pair = 0; pair < 4; pair++) {
       const image = new Image();
@@ -62,9 +77,41 @@ export class TurtleDetail {
             crownX: count ? sum / count : (right - left) / 2,
           };
         }
+        // Pose 1 has a clearly drawn pupil in both variants. Reuse its iris
+        // and eyelids with a soft edge that blends into each moving socket.
+        if (pair === 0) {
+          this.eye.width = eyeRadiusX * 2;
+          this.eye.height = eyeRadiusY * 2;
+          const eye = this.eye.getContext("2d");
+          if (eye) {
+            const [x, y] = eyeCenters[1];
+            eye.drawImage(
+              image,
+              768 + x - eyeRadiusX,
+              y - eyeRadiusY,
+              this.eye.width,
+              this.eye.height,
+              0,
+              0,
+              this.eye.width,
+              this.eye.height,
+            );
+            eye.translate(eyeRadiusX, eyeRadiusY);
+            eye.scale(eyeRadiusX, eyeRadiusY);
+            const edge = eye.createRadialGradient(0, 0, 0, 0, 0, 1);
+            edge.addColorStop(0.7, "#fff");
+            edge.addColorStop(1, "transparent");
+            eye.globalCompositeOperation = "destination-in";
+            eye.fillStyle = edge;
+            eye.fillRect(-1, -1, 2, 2);
+          }
+        }
         if (++loaded === 4) this.ready = true;
       };
-      image.src = `/assets/turtle-detail-${pair}.png`;
+      image.src =
+        variant === "healthy"
+          ? `/assets/turtle-detail-${pair}.png`
+          : `/assets/turtle-ruined-${pair}.webp`;
     }
   }
   draw(
@@ -110,17 +157,14 @@ export class TurtleDetail {
     const image = this.images[Math.floor(frame / 2)];
     const anchor = this.anchors[frame];
     const ratio = fixed.shellWidth / anchor.shellWidth;
-    ctx.drawImage(
-      image,
-      (frame % 2) * 768,
-      0,
-      768,
-      1024,
+    ctx.translate(
       fixed.crownX - anchor.crownX * ratio,
       fixed.top - anchor.top * ratio,
-      768 * ratio,
-      1024 * ratio,
     );
+    ctx.scale(ratio, ratio);
+    ctx.drawImage(image, (frame % 2) * 768, 0, 768, 1024, 0, 0, 768, 1024);
+    const [eyeX, eyeY] = eyeCenters[frame];
+    ctx.drawImage(this.eye, eyeX - eyeRadiusX, eyeY - eyeRadiusY);
     ctx.restore();
     return true;
   }

@@ -425,8 +425,10 @@ export function step(w: World) {
       );
   if (w.tick - w.lastUsageTick > 100)
     w.relief = clamp(w.relief + 0.025 + w.cooperation * 0.00015);
+  const usagePressure = Math.pow(tokens / budget, w.settings.curve) * 100;
+  // Daily overages survive recovery. Fixed scenarios allow recovery even over a lifetime budget.
   const target = clamp(
-    clamp(Math.pow(tokens / budget, w.settings.curve) * 100) - w.relief,
+    (isAdaptive(w) ? usagePressure : clamp(usagePressure)) - w.relief,
   );
   w.pressure += (target - w.pressure) * 0.012;
   const p = w.pressure / 100,
