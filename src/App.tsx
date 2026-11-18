@@ -595,7 +595,9 @@ function App() {
           <span />
           {saveStatus.startsWith("Échec")
             ? "Échec de sauvegarde"
-            : "Local · privé"}
+            : syncStatus.startsWith("Synchronisé")
+              ? "Suit votre usage · local"
+              : "Monde autonome · local"}
         </span>
       </footer>
       {!panel && !selected && (
