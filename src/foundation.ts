@@ -35,6 +35,22 @@ export class WorldFoundation {
     true,
   );
   turtle = new AnimationAtlas("/assets/turtle-swim.png", 4, 4, 0, false, true);
+  private ruinedTurtle = new AnimationAtlas(
+    "/assets/turtle-decayed.png",
+    4,
+    4,
+    0,
+    false,
+    true,
+  );
+  private ruinedElephants = new AnimationAtlas(
+    "/assets/elephant-decayed.png",
+    4,
+    2,
+    0,
+    false,
+    true,
+  );
   ready = false;
   private scratch = document.createElement("canvas");
   /**
@@ -154,33 +170,54 @@ export class WorldFoundation {
   ) {
     if (!this.ready) return false;
     // The shell is registered at its crown, not at the moving flipper tips.
-    this.rotten(
-      ctx,
-      [cx - 800 * scale, cy + 80 * scale, 1600 * scale, 1500 * scale],
-      decay,
-      time,
-      11,
-      (c) => {
-        if (
-          !this.turtleDetail.draw(
-            c,
-            turtlePose(time),
-            cx,
-            cy + 520 * scale,
-            1050 * scale,
+    const blend = Math.max(0, Math.min(1, (decay - 0.48) / 0.36));
+    const turtleBlend = this.ruinedTurtle.ready ? blend : 0;
+    if (turtleBlend < 1) {
+      ctx.save();
+      ctx.globalAlpha *= Math.min(1, 2 * (1 - turtleBlend));
+      this.rotten(
+        ctx,
+        [cx - 800 * scale, cy + 80 * scale, 1600 * scale, 1500 * scale],
+        decay,
+        time,
+        11,
+        (c) => {
+          if (
+            !this.turtleDetail.draw(
+              c,
+              turtlePose(time),
+              cx,
+              cy + 520 * scale,
+              1050 * scale,
+            )
           )
-        )
-          this.turtle.draw(
-            c,
-            0,
-            cx,
-            cy + 520 * scale,
-            1050 * scale,
-            false,
-            0.22,
-          );
-      },
-    );
+            this.turtle.draw(
+              c,
+              0,
+              cx,
+              cy + 520 * scale,
+              1050 * scale,
+              false,
+              0.22,
+            );
+        },
+      );
+      ctx.restore();
+    }
+    if (turtleBlend > 0) {
+      ctx.save();
+      ctx.globalAlpha *= Math.min(1, 2 * turtleBlend);
+      this.ruinedTurtle.draw(
+        ctx,
+        turtlePose(time),
+        cx + 48 * scale,
+        cy + 449 * scale,
+        1050 * scale,
+        false,
+        0.12,
+      );
+      ctx.restore();
+    }
     // All four carriers sit behind the rock lip. Taller shoulders enter its
     // underside while the fixed foot anchors remain on the shell dome.
     for (const [id, x, y, height, mirror] of [
@@ -189,28 +226,48 @@ export class WorldFoundation {
       [2, -145, 855, 510, 0],
       [3, 145, 855, 510, 1],
     ]) {
-      this.rotten(
-        ctx,
-        [
-          cx + (x - 330) * scale,
-          cy + (y - height * 1.05) * scale,
-          660 * scale,
-          height * 1.25 * scale,
-        ],
-        decay,
-        time,
-        20 + id * 13,
-        (c) =>
-          this.elephants.draw(
-            c,
-            carrierPose(time, id),
-            cx + x * scale,
-            cy + y * scale,
-            height * scale,
-            Boolean(mirror),
-            0.83,
-          ),
-      );
+      const elephantBlend = this.ruinedElephants.ready ? blend : 0;
+      if (elephantBlend < 1) {
+        ctx.save();
+        ctx.globalAlpha *= Math.min(1, 2 * (1 - elephantBlend));
+        this.rotten(
+          ctx,
+          [
+            cx + (x - 330) * scale,
+            cy + (y - height * 1.05) * scale,
+            660 * scale,
+            height * 1.25 * scale,
+          ],
+          decay,
+          time,
+          20 + id * 13,
+          (c) =>
+            this.elephants.draw(
+              c,
+              carrierPose(time, id),
+              cx + x * scale,
+              cy + y * scale,
+              height * scale,
+              Boolean(mirror),
+              0.83,
+            ),
+        );
+        ctx.restore();
+      }
+      if (elephantBlend > 0) {
+        ctx.save();
+        ctx.globalAlpha *= Math.min(1, 2 * elephantBlend);
+        this.ruinedElephants.draw(
+          ctx,
+          carrierPose(time, id),
+          cx + x * scale,
+          cy + y * scale,
+          height * scale,
+          Boolean(mirror),
+          0.83,
+        );
+        ctx.restore();
+      }
     }
     // Register each continuous cliff face to the isometric rim. A horizontal
     // crop would change the strata's slope halfway down the same face.
