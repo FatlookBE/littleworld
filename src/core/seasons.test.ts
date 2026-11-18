@@ -67,3 +67,10 @@ it("counts the village days left in the current season", () => {
   expect(daysToNextSeason(day * 3 + 10)).toBe(1);
   expect(daysToNextSeason(day * 4)).toBe(4);
 });
+
+it("writes a chronicle line when a season begins", () => {
+  const w = createWorld(0);
+  w.tick = day * 4 - 1;
+  step(w);
+  expect(w.chronicle[0].text).toContain("L’été");
+});

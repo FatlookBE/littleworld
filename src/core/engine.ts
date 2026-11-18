@@ -13,10 +13,12 @@ import {
 } from "./telemetry";
 import { findRoute, riverCenter } from "./navigation";
 import {
+  isSeasonStart,
   isWet,
   season,
   seasonEffects,
   seasonalWeather,
+  seasonArrival,
   seasonProgress,
 } from "./seasons";
 
@@ -376,6 +378,7 @@ function social(w: World, v: Villager) {
 }
 export function step(w: World) {
   w.tick++;
+  if (isSeasonStart(w.tick)) note(w, seasonArrival[season(w.tick)], "ordinary");
   if (w.replay) {
     const replay = w.replay;
     let processed = 0;

@@ -77,3 +77,13 @@ export function bareBranches(tick: number) {
   if (s === 0) return 1 - ramp(0.05, 0.4, k);
   return 0;
 }
+
+/** Chronicle line when a new season begins (first tick of the season). */
+export const seasonArrival: Record<Season, string> = {
+  0: "Le printemps revient : la neige fond, les premiers semis sortent.",
+  1: "L’été s’installe. Les puits baissent, les herbes sèchent.",
+  2: "L’automne dore la vallée ; c’est le temps des récoltes.",
+  3: "L’hiver tombe sur Val-des-Saules. Le village se serre.",
+};
+export const isSeasonStart = (tick: number) =>
+  tick > 0 && tick % SEASON_TICKS === 0;
