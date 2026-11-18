@@ -229,3 +229,69 @@ it("burning stores take food with them", () => {
   );
   expect(w.food).toBeLessThan(50);
 });
+
+it("new disasters strike, spread and end, and survive a save", () => {
+  const w = createWorld(0);
+  const damp = () => {};
+  w.disasters = [
+    { kind: "quake", x: 14, y: 14, life: 5, people: [] },
+    { kind: "blight", x: 14, y: 14, life: 5, people: [] },
+    { kind: "plague", x: 14, y: 14, life: 5, people: [0] },
+  ];
+  const cond = w.buildings[0].condition,
+    food = w.food,
+    hp = w.villagers[0].health;
+  w.tick = 1;
+  apocalypse(w, () => 0.99, damp);
+  expect(w.buildings[0].condition).toBeLessThan(cond);
+  expect(w.food).toBeLessThan(food);
+  expect(w.villagers[0].health).toBeLessThan(hp);
+  expect(restore(JSON.stringify(w)).disasters).toEqual(w.disasters);
+  for (let i = 0; i < 6; i++) apocalypse(w, () => 0.99, damp);
+  expect(w.disasters).toEqual([]);
+});
+
+it("wolves are fast and bite lightly; wraiths sap morale and fade at dawn", () => {
+  const w = createWorld(0);
+  const [v] = w.villagers;
+  v.x = 12;
+  v.y = 15;
+  w.disasters = [
+    { kind: "monster", species: "wolf", x: 12, y: 18, life: 500, people: [] },
+  ];
+  const d0 = Math.hypot(v.x - 12, v.y - 18);
+  w.tick = 100;
+  apocalypse(
+    w,
+    () => 0.99,
+    () => {},
+  );
+  expect(
+    Math.hypot(v.x - w.disasters[0].x, v.y - w.disasters[0].y),
+  ).toBeLessThan(d0 - 0.05);
+  const m = v.morale;
+  w.tick = 200; // late evening
+  w.disasters = [
+    {
+      kind: "monster",
+      species: "wraith",
+      x: 12,
+      y: 15.5,
+      life: 400,
+      people: [],
+    },
+  ];
+  apocalypse(
+    w,
+    () => 0.99,
+    () => {},
+  );
+  expect(v.morale).toBeLessThan(m);
+  w.tick = 288 * 2 + 60; // morning
+  apocalypse(
+    w,
+    () => 0.99,
+    () => {},
+  );
+  expect(w.disasters).toEqual([]);
+});
