@@ -14,21 +14,6 @@
   display: block;
   touch-action: none;
   cursor: grab;
-  /* Soft edges: the world melts into the night instead of being cut. */
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 12%,
-    #000 72%,
-    transparent 96%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 12%,
-    #000 72%,
-    transparent 96%
-  );
 }
 .world:active {
   cursor: grabbing;
@@ -1549,4 +1534,16 @@ body {
 }
 .portrait-3 {
   background-position: 0 -194.14px;
+}
+
+/* Focus mode (default): only the world, the zoom tools and the toggle. */
+.app.focus .topbar,
+.app.focus .place-title,
+.app.focus .world-caption,
+.app.focus .world-hint,
+.app.focus .hud,
+.app.focus .bottom-bar,
+.app.focus .chronicle-teaser,
+.app.focus .skip {
+  display: none;
 }

@@ -85,7 +85,9 @@ function App() {
     [selected, setSelected] = useState<Selection>(null),
     [notice, setNotice] = useState(""),
     [saveStatus, setSaveStatus] = useState("Sauvegarde locale"),
-    [compact, setCompact] = useState(false);
+    [focus, setFocus] = useState(
+      () => localStorage.getItem("tokenfall-ui") !== "full",
+    );
   const [reset, setReset] = useState(false),
     [importMode, setImportMode] = useState("codex"),
     [zoom, setZoom] = useState(1),
@@ -362,7 +364,7 @@ function App() {
     }
   };
   return (
-    <main className={compact ? "app compact" : "app"}>
+    <main className={focus ? "app focus" : "app"}>
       <a className="skip" href="#world-actions">
         Aller aux commandes du village
       </a>
@@ -490,9 +492,13 @@ function App() {
           ⌖
         </button>
         <button
-          aria-label="Basculer la disposition compacte"
-          aria-pressed={compact}
-          onClick={() => setCompact((c) => !c)}
+          aria-label={focus ? "Afficher l’interface" : "Masquer l’interface"}
+          title={focus ? "Afficher l’interface" : "Masquer l’interface"}
+          aria-pressed={!focus}
+          onClick={() => {
+            localStorage.setItem("tokenfall-ui", focus ? "full" : "focus");
+            setFocus(!focus);
+          }}
         >
           ▣
         </button>
