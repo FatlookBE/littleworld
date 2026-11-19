@@ -1,3 +1,5 @@
+import { residentScale } from "./core/population";
+import { indoors } from "./core/shelter";
 import { drawHouseDoor } from "./house-door";
 import { treePosition } from "./core/local-environment";
 import { drawCritters } from "./critters";
@@ -57,7 +59,14 @@ export class WorldRenderer {
     true,
   );
   wolves = new AnimationAtlas("/assets/wolf-cycle.png", 4, 4, 0, false, true);
-  wraiths = new AnimationAtlas("/assets/wraith-cycle.png", 4, 2, 0, false, true);
+  wraiths = new AnimationAtlas(
+    "/assets/wraith-cycle.png",
+    4,
+    2,
+    0,
+    false,
+    true,
+  );
   flames = new AnimationAtlas("/assets/flames-cycle.png", 4, 3, 0, true);
   previousPositions = new Map<number, Point>();
   waterLevel = new WaterLevel();
@@ -612,7 +621,7 @@ export class WorldRenderer {
   person(v: Villager, w: World, selected: number | null) {
     if (v.dead) {
       const [x, y] = this.project(v.x, v.y);
-      const s = this.scale,
+      const s = this.scale * residentScale(v),
         c = this.ctx;
       const stage = remainsStage(v, w.tick);
       this.ellipse(x, y, 22, 7, "#181c1744");
@@ -682,7 +691,7 @@ export class WorldRenderer {
       y = previous[1] + (y - previous[1]) * this.interpolation;
     }
     const [sx, sy] = this.project(x, y),
-      s = this.scale,
+      s = this.scale * residentScale(v),
       c = this.ctx;
     const walking = v.route.length > 0 && !w.settings.reducedMotion;
     const bob = walking ? Math.sin(this.time * 9 + v.id) * 0.8 : 0;
@@ -1255,7 +1264,11 @@ export class WorldRenderer {
       });
     }
     for (const v of w.villagers) {
-      if (!v.dead && v.visit && v.visit.phase !== "approaching") continue;
+      if (
+        indoors(v, w) ||
+        (!v.dead && v.visit && v.visit.phase !== "approaching")
+      )
+        continue;
       objects.push({
         depth: v.x + v.y,
         draw: () => this.person(v, w, selected),
@@ -1582,7 +1595,25 @@ export class WorldRenderer {
             this.wolves.draw(c, phase, x, y, 49 * s, mirror);
           } else {
             const drift = loopFrame(t, 8, 5, 0, w.settings.reducedMotion);
-            this.wraiths.draw(c, drift, x, y - 7 * s, 80 * s, mirror, 0.96);
+            const beat = attacking ? phase - 8 : -1;
+            const thrust = beat < 0 ? 0 : [0, -3, -6, 9, 19, 12, 5, 0][beat];
+            const direction = mirror ? -1 : 1;
+            const sx = x + thrust * direction * s;
+            this.wraiths.draw(c, drift, sx, y - 7 * s, 80 * s, mirror, 0.96);
+            if (beat >= 3 && beat <= 5) {
+              c.save();
+              c.translate(sx, y - 32 * s);
+              c.scale(direction * s, s);
+              c.strokeStyle = beat === 4 ? "#e9fff0" : "#98d9c8a0";
+              c.shadowColor = "#a4ffe0";
+              c.shadowBlur = 9 * s;
+              c.lineWidth = beat === 4 ? 3 : 1.5;
+              c.beginPath();
+              c.moveTo(5, -18);
+              c.quadraticCurveTo(38, -12, 27, 13);
+              c.stroke();
+              c.restore();
+            }
           }
           continue;
         }

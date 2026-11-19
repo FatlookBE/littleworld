@@ -22,6 +22,7 @@ export interface Villager {
   id: number;
   name: string;
   age: number;
+  bornAt?: number;
   role: string;
   home: number;
   household: number;
@@ -78,6 +79,7 @@ export interface Settings {
   usageSession?: string;
 }
 export interface World {
+  lastBirthAt?: number;
   localEnvironment?: import("./local-environment").LocalEnvironment;
   disasters?: import("./apocalypse").Disaster[];
   version: 1;

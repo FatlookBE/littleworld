@@ -1,3 +1,4 @@
+import { villageCapacity } from "./core/population";
 import { LocalDiagnostics } from "./LocalDiagnostics";
 import { VillageAudioSettings } from "./VillageAudioSettings";
 import { useVillageAudio } from "./use-village-audio";
@@ -627,7 +628,7 @@ function App() {
           <div>
             <strong>
               {population}
-              <small> / 24</small>
+              <small> / {villageCapacity}</small>
             </strong>
             <span>habitants</span>
           </div>
@@ -752,7 +753,10 @@ function App() {
                 <div>
                   <h2>{person.name}</h2>
                   <p>
-                    {person.role} · {person.age} ans
+                    {person.role} ·{" "}
+                    {person.age
+                      ? `${person.age} ${person.age === 1 ? "an" : "ans"}`
+                      : "Nouveau-né"}
                   </p>
                 </div>
               </div>

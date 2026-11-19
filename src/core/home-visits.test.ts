@@ -1,3 +1,4 @@
+import { indoors } from "./shelter";
 import { expect, it } from "vitest";
 import { createWorld, step } from "./engine";
 import { restore } from "./persistence";
@@ -6,7 +7,6 @@ import {
   doorBusy,
   doorOpening,
   doorStep,
-  indoors,
   tryHomeVisit,
   updateHomeVisit,
 } from "./home-visits";
@@ -34,7 +34,7 @@ it("opens, passes, closes, rests inside, then opens and exits without leaving th
     w.tick++;
     updateHomeVisit(w, v);
   }
-  expect(indoors(v)).toBe(true);
+  expect(indoors(v, w)).toBe(true);
   expect(v.route).toHaveLength(0);
   const until = v.visit!.until;
   w.tick = until;
@@ -153,7 +153,7 @@ it("schedules recurring house visits through the normal simulation", () => {
   for (let tick = 0; tick < 2400; tick++) {
     step(w);
     for (const v of w.villagers) {
-      if (indoors(v)) entered.add(v.id);
+      if (indoors(v, w)) entered.add(v.id);
       if (v.visit?.phase === "exiting") exited.add(v.id);
     }
   }

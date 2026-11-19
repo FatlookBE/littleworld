@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { createWorld, step } from "./engine";
 import { moveResident, spreadDestination } from "./crowd";
-import { indoors } from "./home-visits";
+import { indoors } from "./shelter";
 import { walkable } from "./navigation";
 it("reserves separate walkable stopping places for a group visiting one location", () => {
   const w = createWorld(0);
@@ -40,7 +40,7 @@ it("stationary villagers do not accumulate in persistent groups at shared destin
     step(w);
     if (tick < 500 || tick % 40 !== 0) continue;
     const stopped = w.villagers.filter(
-      (v) => !v.dead && !indoors(v) && !v.route.length,
+      (v) => !v.dead && !indoors(v, w) && !v.route.length,
     );
     for (const v of stopped)
       largest = Math.max(

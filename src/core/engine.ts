@@ -1,3 +1,10 @@
+import { indoors, needsHomeCare } from "./shelter";
+import {
+  growResident,
+  relocateInfant,
+  welcomeChild,
+  villageCapacity,
+} from "./population";
 import {
   canRebuild,
   reconstructionJob,
@@ -6,7 +13,6 @@ import {
 import {
   doorStep,
   cancelVisit,
-  indoors,
   tryHomeVisit,
   updateHomeVisit,
 } from "./home-visits";
@@ -284,8 +290,12 @@ function destination(w: World, v: Villager) {
     const h = w.buildings[v.home];
     target = doorStep(h);
     action = "Se repose à la maison";
+  } else if (v.age < 18) {
+    const home = w.buildings[v.home];
+    target = [home.x + 0.5 + (v.id % 2 ? 2 : -1), home.y + 3.5];
+    action = "Joue près de sa maison";
   } else {
-    const repair = reconstructionJob(w, v);
+    const repair = v.age >= 18 ? reconstructionJob(w, v) : undefined;
     const repairRoute = repair && findRoute(w, [v.x, v.y], repair.target);
     const repairStop = repairRoute && repairRoute.at(-1);
     if (
@@ -504,14 +514,14 @@ export function step(w: World) {
     w.water +
       (0.21 * (1 - p) * (w.buildings[8].condition / 100) +
         rain -
-        0.11 * (alive.length / 24) -
+        0.11 * (alive.length / villageCapacity) -
         p * 0.12 -
         effects.evaporation),
   );
   w.food = clamp(
     w.food +
       (((0.2 * w.fertility) / 100) * (1 - p * 0.65) * harvest -
-        (0.105 * alive.length) / 24),
+        (0.105 * alive.length) / villageCapacity),
   );
   w.unrest = clamp(
     w.unrest +
@@ -527,6 +537,13 @@ export function step(w: World) {
     );
   }
   for (const v of alive) {
+    if (growResident(w, v))
+      note(
+        w,
+        `${v.name} atteint l’âge adulte et commence à travailler au village.`,
+        "hope",
+        v.id,
+      );
     if (v.health <= 0) {
       die(w, v);
       continue;
@@ -552,7 +569,21 @@ export function step(w: World) {
         }
       }
     }
-    const visiting = updateHomeVisit(w, v);
+    const young = needsHomeCare(v);
+    if (young) {
+      const shelter = relocateInfant(w, v);
+      if (shelter)
+        note(w, `${v.name} est mis à l’abri à ${shelter.name}.`, "hope", v.id);
+      if (w.food > 1) {
+        v.hunger = clamp(v.hunger - 0.24);
+        w.food = clamp(w.food - 0.008);
+      }
+      if (w.water > 1) {
+        v.thirst = clamp(v.thirst - 0.28);
+        w.water = clamp(w.water - 0.008);
+      }
+    }
+    const visiting = young || updateHomeVisit(w, v);
     if (!visiting) {
       if (
         (!v.route.length && w.tick >= (v.nextDecision ?? 0)) ||
@@ -606,7 +637,7 @@ export function step(w: World) {
         w.food = clamp(w.food - 0.015);
       }
       if (v.action.includes("repose"))
-        v.energy = clamp(v.energy + (indoors(v) ? 1.3 : 1));
+        v.energy = clamp(v.energy + (indoors(v, w) ? 1.3 : 1));
     }
     updateNutrition(v);
     v.morale = clamp(
@@ -634,6 +665,14 @@ export function step(w: World) {
     (text, person, kind = "warning") => note(w, text, kind, person),
   );
   for (const v of residents(w)) if (v.health <= 0) die(w, v);
+  const child = welcomeChild(w);
+  if (child)
+    note(
+      w,
+      `${child.name} vient de naître. Le village accueille un nouvel enfant.`,
+      "hope",
+      child.id,
+    );
   const s = stage(w);
   if (!w.milestones.includes(s)) {
     w.milestones.push(s);

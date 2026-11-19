@@ -111,7 +111,7 @@ export function residentPose(v: Villager, w: World, time: number) {
 }
 export const residentSkin = (id: number) =>
   [2, 3, 1, 0, 1, 0, 3, 2, 3, 0, 1, 2, 1, 0, 3, 0, 1, 0, 1, 0, 1, 2, 3, 2][
-    id
+    id % 24
   ] ?? 0;
 const detailedActivityAtlas = (path: string) =>
   new AnimationAtlas(path, 6, 4, 0, true, true, undefined, true);
