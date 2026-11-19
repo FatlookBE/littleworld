@@ -13,3 +13,9 @@ Dans Synchro & données, Projet puis Conversation déterminent l'activité qui i
 Le projet provient du répertoire de travail déclaré dans les métadonnées. Une conversation est identifiée par source et identifiant de session ; aucun titre ni contenu de conversation n'est exposé. Les données sans projet restent accessibles sous Projet non renseigné. Une conversation explicitement sélectionnée est aussi prise en compte dans le scénario à budget fixe de session.
 
 Les filtres ne rembobinent pas les événements déjà survenus dans le village. Les jours demeurent en UTC, comme les compteurs existants.
+
+## Lecture des compteurs
+
+Le compteur principal affiche les tokens retenus aujourd'hui (UTC), cache connu exclu, et le budget du jeu sur une ligne distincte. Le panneau données explicite les catégories actives, la règle du budget adaptatif (deux fois la moyenne des sept derniers jours renseignés, minimum 10 000) et le repli sur le budget fixe sans historique. Le budget affiché est recalculé même si la simulation est en pause.
+
+L'historique brut affiche séparément les entrées/sorties conservées et inclut le cache. Les sous-catégories absentes sont indiquées Non fourni, et les sommes avec couverture incomplète sont marquées partielles. En mode fixe, le panneau précise la fenêtre utilisée pour calculer la pression, qui peut différer du compteur du jour.

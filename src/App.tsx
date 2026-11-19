@@ -19,6 +19,9 @@ import {
   selectedUsage,
   usageSessionKey,
   effectiveBudget,
+  isAdaptive,
+  ADAPTIVE_DAYS,
+  adaptiveFloor,
   DemoAdapter,
   ReplayAdapter,
   CodexAdapter,
@@ -294,6 +297,17 @@ function App() {
   }, []);
   const population = residents(w).length,
     latest = w.chronicle[0];
+  const dailyUsage = dailyFresh(w);
+  const todayTokens = dailyUsage.get(w.day) ?? 0;
+  const displayedBudget = effectiveBudget(w, dailyUsage);
+  const budgetDays = [...dailyUsage.keys()].filter((day) => day < w.day).length;
+  const countedCategories =
+    [
+      w.settings.includeInput ? "entrées hors cache" : null,
+      w.settings.includeOutput ? "sorties" : null,
+    ]
+      .filter(Boolean)
+      .join(" + ") || "aucune catégorie activée";
   const provenance = [...new Set(selectedUsage(w).map((e) => e.provenance))];
   const badge =
     provenance.length === 0 || provenance.every((p) => p === "demo")
@@ -534,11 +548,11 @@ function App() {
         aria-label="État des réserves et de la consommation"
       >
         <div className="token-count">
-          <span>TOKENS AUJOURD’HUI</span>
-          <strong>
-            {fmt(dailyFresh(w).get(w.day) ?? 0)}
-            <small> / {fmt(w.budgetNow ?? w.settings.budget)}</small>
-          </strong>
+          <span>AUJOURD’HUI · UTC · HORS CACHE</span>
+          <strong>{fmt(todayTokens)}</strong>
+          <div className="token-budget-note">
+            Budget du jeu : {fmt(displayedBudget)}
+          </div>
         </div>
         <div className="pressure-stat">
           <span>
@@ -1137,6 +1151,53 @@ function App() {
                   Aucune consommation enregistrée pour cette sélection.
                 </p>
               )}
+              <h3>Aujourd’hui · {w.day} · UTC</h3>
+              <div
+                className="accounting"
+                aria-label="Consommation du jour et budget fictif"
+              >
+                <div>
+                  <span>Tokens du jour retenus</span>
+                  <b>{fmt(todayTokens)}</b>
+                </div>
+                <div>
+                  <span>
+                    Budget fictif {isAdaptive(w) ? "adaptatif" : "fixe"}
+                  </span>
+                  <b>{fmt(displayedBudget)}</b>
+                </div>
+              </div>
+              <p className="fine-print">
+                Calcul : {countedCategories}. La journée change à minuit UTC. Le
+                cache connu est retiré des entrées ; le raisonnement est déjà
+                inclus dans les sorties.
+              </p>
+              <p className="hint">
+                {isAdaptive(w) && budgetDays > 0
+                  ? `Budget : deux fois la moyenne des ${Math.min(ADAPTIVE_DAYS, budgetDays)} derniers jours renseignés avant aujourd’hui, minimum ${fmt(adaptiveFloor)} tokens.`
+                  : isAdaptive(w)
+                    ? "Pas encore de journée passée renseignée : le budget fixe des réglages sert de référence."
+                    : "Le budget fixe est défini dans les réglages du village."}{" "}
+                Ce budget pilote le jeu ; il ne correspond ni à votre quota
+                Codex ni à une facture.
+              </p>
+              {!isAdaptive(w) && (
+                <p className="fine-print">
+                  Pour la pression, le scénario fixe utilise{" "}
+                  {w.settings.scenario === "daily"
+                    ? "la journée UTC"
+                    : w.settings.scenario === "session"
+                      ? "la session sélectionnée ou la session du village"
+                      : "tout l’historique sélectionné"}
+                  . Le compteur principal affiche toujours aujourd’hui.
+                </p>
+              )}
+              <h3>Historique importé · cache compris</h3>
+              <p className="fine-print">
+                Somme des entrées et sorties conservées pour la sélection,
+                toutes dates confondues. Ce total brut peut être beaucoup plus
+                élevé que le compteur du jour.
+              </p>
               <div className="source-badge">{badge}</div>
               <p>
                 {badge === "DÉMO"
@@ -1167,7 +1228,7 @@ function App() {
                 {syncStatus || "Synchronisation automatique…"}
               </p>
               <a href="?demo=village">Jouer la démo</a>
-              <h3>Importer des métadonnées</h3>
+              <h3>Détail de l’historique sélectionné</h3>
               <div
                 className="accounting"
                 aria-label="Détail des tokens conservés"
@@ -1186,11 +1247,12 @@ function App() {
                       {(key === "cached" || key === "reasoning") &&
                       !selectedUsage(w).some((e) => e[key] !== undefined)
                         ? "Non fourni"
-                        : fmt(totals(w)[key])}
+                        : `${fmt(totals(w)[key])}${(key === "cached" || key === "reasoning") && selectedUsage(w).some((e) => e[key] === undefined) ? " (partiel)" : ""}`}
                     </b>
                   </div>
                 ))}
               </div>
+              <h3>Importer des métadonnées</h3>
               <label className="field">
                 Format
                 <select

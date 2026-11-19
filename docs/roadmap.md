@@ -2,7 +2,7 @@
 
 1. Réalisé — Comptage quotidien précis, migration des anciens cumuls sans doublons.
 2. Réalisé — Filtre par projet et conversation.
-3. À faire — Compteurs explicites : jour, historique, cache, budget fictif.
+3. Réalisé — Compteurs explicites : jour, historique, cache, budget fictif.
 4. À faire — Synchronisation accessible : connexion, date, erreurs, actualisation.
 5. À faire — Démarrage application et pont en une commande, ports stables.
 6. À faire — Transitions progressives entre les quatre stades.

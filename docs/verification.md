@@ -184,3 +184,9 @@ Points 1 et 2 de la feuille de route : deltas Codex regroupés par jour UTC, mig
 99 tests / 22 fichiers, build et lint réussis. Agent indépendant : **9/10** après corrections des relevés partiels et cumuls hérités. Validation finale de code/tests ; navigateur local indisponible, aucune validation visuelle revendiquée pour cette passe. Pont redémarré sur 5175 : réponse v2 vérifiée sans afficher de contenu de session (350 relevés, 21 sessions migrables, 7 historiques incomplets au contrôle).
 
 Prochain point : clarifier les compteurs. Entrées/sorties de maisons et animations des portes inscrites après les animations d'actions dans `docs/roadmap.md`.
+
+### Lisibilité des compteurs — 19 novembre 2026
+
+Point 3 : compteur du jour UTC hors cache séparé du budget du jeu ; historique brut cache compris clairement nommé ; explication des catégories actives, du budget adaptatif et de sa référence fixe ; couverture partielle des sous-catégories signalée. Budget affiché recalculé même en pause, fenêtre de pression du scénario fixe explicitée.
+
+Build et lint réussis. Revue indépendante finale : **9/10** sur code et libellés ; pas de contrôle visuel navigateur disponible sur cette passe. Aucun changement moteur ; suite de 99 tests validée au point précédent.
