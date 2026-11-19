@@ -1,3 +1,4 @@
+import { readUsageBridge } from "./usage-bridge";
 import { remainsLabel } from "./core/lifecycle";
 import { residentSkin } from "./sprites";
 import { useEffect, useRef, useState } from "react";
@@ -97,7 +98,14 @@ function App() {
   const [reset, setReset] = useState(false),
     [importMode, setImportMode] = useState("codex"),
     [zoom, setZoom] = useState(1),
-    [syncStatus, setSyncStatus] = useState("");
+    [syncRequest, setSyncRequest] = useState(0);
+  const [sync, setSync] = useState<{
+    phase: "idle" | "loading" | "connected" | "error";
+    lastSuccess: number | null;
+    count: number;
+    incomplete: number;
+    error: string;
+  }>({ phase: "idle", lastSuccess: null, count: 0, incomplete: 0, error: "" });
   const dialog = useRef<HTMLDialogElement>(null);
   const running = useRef({ paused, speed }),
     selection = useRef(selected),
@@ -114,45 +122,50 @@ function App() {
     if (!ready) return;
     let live = true,
       timer = 0;
-    const url = "http://127.0.0.1:5175/usage?format=2";
+    let active: AbortController | undefined;
     const poll = async () => {
+      active = new AbortController();
+      const controller = active;
+      const timeout = window.setTimeout(() => controller.abort(), 8000);
+      setSync((previous) => ({ ...previous, phase: "loading", error: "" }));
       try {
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) throw Error(String(res.status));
-        const payload = await res.json();
-        const dailySnapshot =
-          payload?.version === 2 && Array.isArray(payload.events);
-        const events = new ReplayAdapter().read(
-          JSON.stringify(dailySnapshot ? payload.events : payload),
+        const { events, codexSessions, incomplete } = await readUsageBridge(
+          controller.signal,
         );
-        const codexSessions =
-          dailySnapshot && Array.isArray(payload.codexSessions)
-            ? payload.codexSessions.filter(
-                (id: unknown): id is string => typeof id === "string",
-              )
-            : [];
         if (!live) return;
         const first = localStorage.getItem("tokenfall-bridge-seen") !== "1";
         const changed = syncUsage(world.current, events, first, codexSessions);
         localStorage.setItem("tokenfall-bridge-seen", "1");
         if (changed) update();
-        setSyncStatus(
-          `Synchronisé à ${new Date().toLocaleTimeString("fr-FR")} · ${events.length} relevés${dailySnapshot && payload.incompleteCodexSessions > 0 ? ` · ${payload.incompleteCodexSessions} historique(s) Codex incomplet(s), dates partielles` : ""}`,
-        );
-      } catch {
+        setSync({
+          phase: "connected",
+          lastSuccess: Date.now(),
+          count: events.length,
+          incomplete,
+          error: "",
+        });
+      } catch (error) {
         if (live)
-          setSyncStatus(
-            "Pont injoignable — lancez : node scripts/usage-server.mjs",
-          );
+          setSync((previous) => ({
+            ...previous,
+            phase: "error",
+            error:
+              error instanceof Error
+                ? error.message
+                : "Synchronisation impossible.",
+          }));
+      } finally {
+        clearTimeout(timeout);
+        if (live) timer = window.setTimeout(poll, 15000);
       }
-      if (live) timer = setTimeout(poll, 15000) as unknown as number;
     };
-    poll();
+    void poll();
     return () => {
       live = false;
       clearTimeout(timer);
+      active?.abort();
     };
-  }, [ready]);
+  }, [ready, syncRequest]);
   const announce = (s: string) => {
     setNotice(s);
     setTimeout(() => setNotice(""), 6500);
@@ -457,7 +470,15 @@ function App() {
             aria-expanded={panel === "data"}
           >
             Synchro & données
-            <span aria-hidden="true">↗</span>
+            <span className="sync-short-state">
+              {sync.phase === "connected"
+                ? "Connecté"
+                : sync.phase === "error"
+                  ? "À vérifier"
+                  : sync.phase === "loading"
+                    ? "En cours"
+                    : "En attente"}
+            </span>
           </button>
         </div>
         <button
@@ -638,7 +659,7 @@ function App() {
           <span />
           {saveStatus.startsWith("Échec")
             ? "Échec de sauvegarde"
-            : syncStatus.startsWith("Synchronisé")
+            : sync.phase === "connected"
               ? "Suit votre usage · local"
               : "Monde autonome · local"}
         </span>
@@ -1080,6 +1101,64 @@ function App() {
                 Suivez votre consommation Codex et Claude Code avec le pont
                 local, ou importez un fichier de métadonnées.
               </p>
+              <section
+                className="sync-panel"
+                aria-label="État de la synchronisation"
+              >
+                <div className="sync-heading">
+                  <strong role="status">
+                    {sync.phase === "loading"
+                      ? "Synchronisation en cours…"
+                      : sync.phase === "connected"
+                        ? "Pont local connecté"
+                        : sync.phase === "error"
+                          ? "Synchronisation interrompue"
+                          : "En attente du village"}
+                  </strong>
+                  <button
+                    className="full-button"
+                    disabled={!ready || sync.phase === "loading"}
+                    onClick={() => setSyncRequest((value) => value + 1)}
+                  >
+                    {sync.phase === "loading" ? "Actualisation…" : "Actualiser"}
+                  </button>
+                </div>
+                <p className="fine-print">
+                  Dernière réussite :{" "}
+                  {sync.lastSuccess
+                    ? new Date(sync.lastSuccess).toLocaleString("fr-FR")
+                    : "pas encore de synchronisation réussie"}
+                  .
+                </p>
+                {sync.lastSuccess !== null && (
+                  <p className="fine-print">
+                    {sync.count} relevés reçus au dernier succès, avant vos
+                    filtres.
+                  </p>
+                )}
+                {sync.phase === "error" && (
+                  <div role="alert">
+                    <p>
+                      {sync.error} Les données déjà importées restent
+                      conservées.
+                    </p>
+                    <p className="fine-print">
+                      Depuis le dossier du projet, démarrez le pont :
+                    </p>
+                    <code>node scripts/usage-server.mjs</code>
+                  </div>
+                )}
+                {sync.incomplete > 0 && (
+                  <p className="hint">
+                    {sync.incomplete} historique(s) Codex incomplet(s) : les
+                    dates manquantes ne sont pas inventées.
+                  </p>
+                )}
+                <p className="fine-print">
+                  Nouvelle vérification automatique 15 secondes après chaque
+                  tentative. L’import manuel reste disponible plus bas.
+                </p>
+              </section>
               <h3>Activité qui influence le village</h3>
               <label>
                 Projet
@@ -1224,9 +1303,7 @@ function App() {
                   </div>
                 ))}
               </div>
-              <p className="hint" role="status">
-                {syncStatus || "Synchronisation automatique…"}
-              </p>
+
               <a href="?demo=village">Jouer la démo</a>
               <h3>Détail de l’historique sélectionné</h3>
               <div

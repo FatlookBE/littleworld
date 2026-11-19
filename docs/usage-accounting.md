@@ -19,3 +19,9 @@ Les filtres ne rembobinent pas les événements déjà survenus dans le village.
 Le compteur principal affiche les tokens retenus aujourd'hui (UTC), cache connu exclu, et le budget du jeu sur une ligne distincte. Le panneau données explicite les catégories actives, la règle du budget adaptatif (deux fois la moyenne des sept derniers jours renseignés, minimum 10 000) et le repli sur le budget fixe sans historique. Le budget affiché est recalculé même si la simulation est en pause.
 
 L'historique brut affiche séparément les entrées/sorties conservées et inclut le cache. Les sous-catégories absentes sont indiquées Non fourni, et les sommes avec couverture incomplète sont marquées partielles. En mode fixe, le panneau précise la fenêtre utilisée pour calculer la pression, qui peut différer du compteur du jour.
+
+## État de synchronisation
+
+Le bouton d'accès indique connecté, en cours ou à vérifier. Le panneau affiche la dernière réussite avec date et heure locales, le nombre de relevés du dernier succès avant filtrage et les historiques incomplets. Actualiser déclenche un relevé immédiat et reste désactivé pendant une requête.
+
+Une tentative est annulée après huit secondes. Les erreurs de connexion, HTTP et de décodage sont distinguées ; les données importées et la date du dernier succès restent conservées. Nouvelle tentative quinze secondes après la fin de la précédente. Les requêtes abandonnées après changement de cycle React ne peuvent pas importer une réponse périmée. Une commande de démarrage du pont apparaît en cas d'erreur ; l'import manuel reste disponible.

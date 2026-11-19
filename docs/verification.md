@@ -190,3 +190,9 @@ Prochain point : clarifier les compteurs. Entrées/sorties de maisons et animati
 Point 3 : compteur du jour UTC hors cache séparé du budget du jeu ; historique brut cache compris clairement nommé ; explication des catégories actives, du budget adaptatif et de sa référence fixe ; couverture partielle des sous-catégories signalée. Budget affiché recalculé même en pause, fenêtre de pression du scénario fixe explicitée.
 
 Build et lint réussis. Revue indépendante finale : **9/10** sur code et libellés ; pas de contrôle visuel navigateur disponible sur cette passe. Aucun changement moteur ; suite de 99 tests validée au point précédent.
+
+### Synchronisation accessible — 19 novembre 2026
+
+Point 4 : état visible dans le bouton, dernière réussite conservée, nombre de relevés et avertissement d'historique incomplet, actualisation manuelle, erreurs réseau/HTTP/données distinguées. Timeout de huit secondes, nouvelle tentative après quinze secondes, annulation et garde contre les réponses périmées.
+
+102 tests / 23 fichiers, build et lint réussis. Revue indépendante : **9/10**. Navigateur local indisponible ; validation code/tests uniquement pour cette passe.
