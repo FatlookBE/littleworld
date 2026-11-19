@@ -16,3 +16,11 @@ Create a GAME SPRITE ANIMATION SHEET for existing Tokenfall. Reference supplies 
 ## Lecture
 
 Cycles de six poses à cinq poses/seconde simulée, phases décalées par habitant, taille et point d’appui fixes. Marche, coups, combats et détresse restent prioritaires. Les activités commencent à destination avec une pause de 24 à 35 pas simulés minimum après le trajet. Boisson et repas nécessitent des réserves. Les actions sans cycle dédié conservent le rendu existant.
+
+## Pétrissage, soins, portage et combat
+
+Huit planches générées avec l’outil intégré `image_gen`, en 1536 × 1024, six poses par ligne et quatre identités. Elles sont enregistrées dans `public/assets/` : `residents-bake.png`, `residents-care.png`, `residents-carry.png`, `residents-fight-cycle.png` et leurs quatre équivalents `residents-gaunt-*`.
+
+Les consignes de dessin reprennent les mêmes personnages et costumes des planches existantes, avec une silhouette amaigrie pour les variantes. Le pain se pétrit sur un plan de travail, les soins mobilisent les mains et le matériel de soin, le portage déplace les jambes avec le seau, et le combat suit garde, préparation, frappe, prolongement, retrait et retour en garde. Les cellules restent séparées par des marges transparentes.
+
+Le pétrissage et les soins se déclenchent à l’arrivée. Le portage accompagne la marche. Les réactions à un coup et la réduction des animations restent prioritaires. Les huit PNG ont passé le contrôle indépendant des marges alpha.
