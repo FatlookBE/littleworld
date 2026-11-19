@@ -295,3 +295,36 @@ it("wolves are fast and bite lightly; wraiths sap morale and fade at dawn", () =
   );
   expect(w.disasters).toEqual([]);
 });
+
+it.each(["wolf", "wraith"] as const)(
+  "lets a %s wind up and land one hit on an adult",
+  (species) => {
+    const w = createWorld(0);
+    const [victim, child] = w.villagers;
+    victim.x = 13;
+    victim.y = 15;
+    child.x = 12;
+    child.y = 15;
+    child.age = 8;
+    w.tick = 200;
+    w.disasters = [
+      { kind: "monster", species, x: 12, y: 15, life: 100, people: [] },
+    ];
+    const attack = () =>
+      apocalypse(
+        w,
+        () => 1,
+        () => {},
+      );
+    attack();
+    expect(w.disasters[0].people).toEqual([victim.id]);
+    expect(victim.health).toBe(100);
+    for (let i = 0; i < 5; i++) {
+      w.tick++;
+      attack();
+    }
+    expect(victim.health).toBe(100 - (species === "wolf" ? 3 : 4));
+    expect(victim.hitAt).toBe(204);
+    expect(child.health).toBe(100);
+  },
+);

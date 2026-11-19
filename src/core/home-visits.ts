@@ -1,3 +1,4 @@
+import { homeIsUnsafe } from "./shelter";
 import type { Building, Villager, World } from "./types";
 import { findRoute } from "./navigation";
 import { moveResident } from "./crowd";
@@ -11,13 +12,6 @@ export const doorStep = (b: Building): [number, number] => [
   b.x + 0.5,
   b.y + 2.5,
 ];
-export const indoors = (v: Villager) => !v.dead && v.visit?.phase === "inside";
-const dangerous = (w: World, b: Building) =>
-  b.condition <= 15 ||
-  w.disasters?.some(
-    (e) =>
-      e.kind === "fire" && e.life > 0 && Math.hypot(e.x - b.x, e.y - b.y) < 3,
-  );
 export function doorBusy(w: World, b: number, except: number) {
   return w.villagers.some(
     (v) =>
@@ -49,7 +43,7 @@ export function tryHomeVisit(w: World, v: Villager) {
   const b = w.buildings.find((b) => b.id === v.home && b.type === "home");
   if (
     !b ||
-    dangerous(w, b) ||
+    homeIsUnsafe(w, b) ||
     doorBusy(w, b.id, v.id) ||
     Math.hypot(v.x - b.x, v.y - b.y) > 5
   )
@@ -76,7 +70,7 @@ export function updateHomeVisit(w: World, v: Villager) {
     cancelVisit(w, v);
     return false;
   }
-  const threat = dangerous(w, b);
+  const threat = homeIsUnsafe(w, b);
   if (visit.phase === "approaching") {
     if (
       threat ||

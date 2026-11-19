@@ -1,3 +1,4 @@
+import { residentRecordLimit, villageCapacity } from "./population";
 import type { World } from "./types";
 import { validateEvent } from "./telemetry";
 const KEY = "tokenfall-world-v1";
@@ -7,7 +8,8 @@ export function restore(text: string): World {
     throw Error("Version de sauvegarde non prise en charge.");
   if (
     !Array.isArray(w.villagers) ||
-    w.villagers.length !== 24 ||
+    w.villagers.length < villageCapacity ||
+    w.villagers.length > residentRecordLimit ||
     !Array.isArray(w.buildings) ||
     w.buildings.length !== 15 ||
     !Array.isArray(w.usage) ||
@@ -51,7 +53,8 @@ export function restore(text: string): World {
     str(m.text) &&
     ["hope", "warning", "ordinary"].includes(m.kind) &&
     (m.person === undefined ||
-      (Number.isInteger(m.person) && finite(m.person, 0, 23)));
+      (Number.isInteger(m.person) &&
+        finite(m.person, 0, w.villagers.length - 1)));
   const s = w.settings;
   if (
     !Number.isSafeInteger(w.tick) ||
@@ -104,7 +107,7 @@ export function restore(text: string): World {
       (v) =>
         v &&
         finite(v.tick, 0, 1e12) &&
-        finite(v.population, 0, 24) &&
+        finite(v.population, 0, villageCapacity) &&
         finite(v.pressure) &&
         str(v.session),
     )
@@ -139,6 +142,8 @@ export function restore(text: string): World {
       !str(v.role) ||
       !str(v.action) ||
       !finite(v.age, 0, 120) ||
+      (v.bornAt !== undefined &&
+        (!Number.isInteger(v.bornAt) || !finite(v.bornAt, 0, w.tick))) ||
       !Number.isInteger(v.home) ||
       !finite(v.home, 0, 7) ||
       !finite(v.household, 0, 7) ||
@@ -195,7 +200,7 @@ export function restore(text: string): World {
         (t) =>
           t &&
           Number.isInteger(t.id) &&
-          finite(t.id, 0, 23) &&
+          finite(t.id, 0, w.villagers.length - 1) &&
           finite(t.bond) &&
           finite(t.favors, 0, 1e9),
       ) ||
@@ -204,6 +209,13 @@ export function restore(text: string): World {
       !v.memories.every(memory)
     )
       throw Error("Habitants invalides.");
+  if (
+    (w.lastBirthAt !== undefined &&
+      (!Number.isInteger(w.lastBirthAt) ||
+        !finite(w.lastBirthAt, 0, w.tick))) ||
+    w.villagers.filter((v) => !v.dead).length > villageCapacity
+  )
+    throw Error("Population invalide.");
   const occupiedDoors = new Set<number>();
   for (const v of w.villagers) {
     if (!v.visit || v.visit.phase === "inside") continue;
@@ -277,7 +289,10 @@ export function restore(text: string): World {
             (e.kind === "fire" && finite(e.doused, 0, 1e6))) &&
           (e.kind !== "fight" ||
             (e.people.length === 2 && e.people[0] !== e.people[1])) &&
-          e.people.every((id) => Number.isInteger(id) && finite(id, 0, 23)),
+          e.people.every(
+            (id) =>
+              Number.isInteger(id) && finite(id, 0, w.villagers.length - 1),
+          ),
       ))
   )
     throw Error("Catastrophes invalides.");

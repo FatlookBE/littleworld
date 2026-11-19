@@ -1,3 +1,4 @@
+import { indoors } from "./shelter";
 import type { Villager, World } from "./types";
 import { findRoute, walkable } from "./navigation";
 type Point = [number, number];
@@ -7,8 +8,7 @@ export function spreadDestination(w: World, v: Villager, target: Point): Point {
   let best: Point = target,
     score = Infinity;
   const peers = w.villagers.filter(
-    (other) =>
-      !other.dead && other.visit?.phase !== "inside" && other.id !== v.id,
+    (other) => !other.dead && !indoors(other, w) && other.id !== v.id,
   );
   for (
     let y = Math.max(0, Math.floor(target[1]) - 4);
@@ -61,7 +61,7 @@ export function moveResident(w: World, v: Villager, speed: number) {
   const peers = w.villagers.filter(
     (other) =>
       !other.dead &&
-      other.visit?.phase !== "inside" &&
+      !indoors(other, w) &&
       other.id !== v.id &&
       Math.hypot(other.x - v.x, other.y - v.y) < 1.6,
   );

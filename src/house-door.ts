@@ -1,3 +1,4 @@
+import { residentScale } from "./core/population";
 import { buildingDamageStage, type EnvironmentAtlas } from "./environment";
 import type { ResidentAtlas } from "./sprites";
 import type { Building, Villager, World } from "./core/types";
@@ -97,7 +98,15 @@ export function drawHouseDoor(
     };
     ctx.save();
     ctx.clip(clip);
-    residents.draw(ctx, walking, w, tick * 0.2, footX, footY, scale);
+    residents.draw(
+      ctx,
+      walking,
+      w,
+      tick * 0.2,
+      footX,
+      footY,
+      scale * residentScale(visitor),
+    );
     ctx.restore();
   }
   // The leaf stays in front of the threshold and narrows in perspective as it

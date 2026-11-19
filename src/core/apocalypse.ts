@@ -1,6 +1,6 @@
-import { indoors } from "./home-visits";
+import { indoors } from "./shelter";
 import { findRoute } from "./navigation";
-import type { World } from "./types";
+import type { Villager, World } from "./types";
 import { isWet, season, seasonEffects } from "./seasons";
 import { daylight } from "../daylight";
 export type Species = "horned" | "wolf" | "wraith";
@@ -26,7 +26,7 @@ export function apocalypse(
   remember: (text: string, person?: number, kind?: "hope" | "warning") => void,
 ) {
   const events = disasters(w),
-    alive = w.villagers.filter((v) => !v.dead && !indoors(v)),
+    alive = w.villagers.filter((v) => !v.dead && !indoors(v, w)),
     sparks: Disaster[] = [];
   for (const e of events) {
     e.life--;
@@ -40,7 +40,9 @@ export function apocalypse(
         continue;
       }
       const participants = e.people.map((id) => w.villagers[id]);
-      if (participants.some((v) => !v || v.dead || indoors(v))) {
+      if (
+        participants.some((v) => !v || v.dead || v.age < 18 || indoors(v, w))
+      ) {
         e.life = 0;
         continue;
       }
@@ -98,67 +100,64 @@ export function apocalypse(
         }
       }
     }
-    if (e.kind === "monster" && e.species === "wraith") {
-      // Spectres drift toward the living and sap their courage; dawn dissolves them.
-      if (daylight(w.tick) > 0.6) e.life = 0;
-      const prey = alive.reduce<(typeof alive)[number] | undefined>(
-        (best, v) =>
-          !best ||
-          Math.hypot(v.x - e.x, v.y - e.y) <
-            Math.hypot(best.x - e.x, best.y - e.y)
-            ? v
-            : best,
-        undefined,
-      );
-      if (prey) {
-        const d = Math.hypot(prey.x - e.x, prey.y - e.y);
-        if (d > 1) {
-          e.x += ((prey.x - e.x) / d) * 0.03;
-          e.y += ((prey.y - e.y) / d) * 0.03;
-        }
+    if (e.kind === "monster") {
+      const ghost = e.species === "wraith",
+        wolf = e.species === "wolf";
+      if (e.life <= 0 || (ghost && daylight(w.tick) > 0.6)) {
+        e.life = 0;
+        continue;
       }
-      for (const v of alive)
-        if (Math.hypot(v.x - e.x, v.y - e.y) < 3.2) {
-          v.morale = Math.max(0, v.morale - 0.35);
-          v.energy = Math.max(0, v.energy - 0.08);
-          if (w.tick % 20 === 0) v.action = "Frissonne devant une ombre pâle";
-        }
-    } else if (e.kind === "monster") {
-      const speed = e.species === "wolf" ? 0.1 : 0.045,
-        bite = e.species === "wolf" ? 2 : 3;
-      const attacking = e.attackAt !== undefined && w.tick - e.attackAt < 8;
+      const speed = wolf ? 0.14 : ghost ? 0.075 : 0.045;
+      const range = wolf ? 1.55 : ghost ? 1.8 : 1.4;
+      const damage = wolf ? 3 : ghost ? 4 : 3;
+      const age = w.tick - (e.attackAt ?? -100);
+      const attacking = age >= 0 && age < 8;
       const victim = attacking
-        ? alive.find((v) => v.id === e.people[0])
-        : alive.reduce<(typeof alive)[number] | undefined>(
-            (best, v) =>
-              !best ||
-              Math.hypot(v.x - e.x, v.y - e.y) <
-                Math.hypot(best.x - e.x, best.y - e.y)
+        ? alive.find((v) => v.id === e.people[0] && v.age >= 18)
+        : alive.reduce<Villager | undefined>(
+            (closest, v) =>
+              v.age >= 18 &&
+              (!closest ||
+                Math.hypot(v.x - e.x, v.y - e.y) <
+                  Math.hypot(closest.x - e.x, closest.y - e.y))
                 ? v
-                : best,
+                : closest,
             undefined,
           );
       if (victim) {
-        const d = Math.hypot(victim.x - e.x, victim.y - e.y);
+        const dx = victim.x - e.x,
+          dy = victim.y - e.y;
+        const distance = Math.hypot(dx, dy);
         if (attacking) {
-          // Damage occurs once at the impact pose; a fleeing victim can evade it.
-          if (w.tick === e.attackAt! + 4 && d <= 1.8) {
-            victim.health = Math.max(0, victim.health - bite);
+          // A single hit, after the anticipation pose. The target can escape range.
+          if (age === 4 && distance <= range + 0.65) {
+            victim.health = Math.max(0, victim.health - damage);
             victim.hitAt = w.tick;
-            victim.hitSide = victim.x - e.x - (victim.y - e.y) >= 0 ? 1 : -1;
-            victim.action = "Encaisse le coup d’une créature";
+            victim.hitSide = dx - dy >= 0 ? 1 : -1;
+            victim.action = ghost
+              ? "Encaisse la frappe d’un fantôme"
+              : wolf
+                ? "Est mordu par un loup"
+                : "Encaisse le coup d’une créature";
+            if (ghost) {
+              victim.energy = Math.max(0, victim.energy - 8);
+              victim.morale = Math.max(0, victim.morale - 5);
+            }
           }
-        } else if (
-          d <= 1.4 &&
-          (e.attackAt === undefined || w.tick - e.attackAt >= 12)
-        ) {
+        } else if (distance <= range && age >= (ghost ? 19 : 12)) {
           e.attackAt = w.tick;
           e.people = [victim.id];
-        } else if (d > 1) {
-          e.x += ((victim.x - e.x) / d) * speed;
-          e.y += ((victim.y - e.y) / d) * speed;
+        } else if (distance > range * 0.75) {
+          e.x += (dx / distance) * speed;
+          e.y += (dy / distance) * speed;
         }
       }
+      if (ghost)
+        for (const v of alive) {
+          if (Math.hypot(v.x - e.x, v.y - e.y) >= 3.2) continue;
+          v.morale = Math.max(0, v.morale - 0.35);
+          v.energy = Math.max(0, v.energy - 0.08);
+        }
     }
 
     for (const v of alive) {
@@ -339,10 +338,11 @@ export function apocalypse(
     }
   }
   if (events.length < 12 && p > 42 && w.food < 40) {
-    const a = alive[Math.floor(random() * alive.length)],
+    const adults = alive.filter((v) => v.age >= 18);
+    const a = adults[Math.floor(random() * adults.length)],
       b =
         a &&
-        alive.find(
+        adults.find(
           (v) => v.id !== a.id && Math.hypot(v.x - a.x, v.y - a.y) < 2,
         );
     if (
