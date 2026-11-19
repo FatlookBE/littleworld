@@ -1,3 +1,4 @@
+import { localHealth, plotPosition } from "./core/local-environment";
 import { paintDecayTransition, type DecayTransition } from "./decay-transition";
 import { drawRiver } from "./water";
 import { autumnColour, snowCover } from "./core/seasons";
@@ -95,6 +96,26 @@ export class PaintedTerrain {
     ctx.globalAlpha = Math.max(0, Math.min(1, 1 - w.vegetation / 100));
     ctx.fillStyle = material(1);
     ctx.fillRect(0, 0, 29, 29);
+    // Irregular painted patches keep local soil health legible without tile borders.
+    for (let i = 0; i < 36; i++) {
+      const [x, y] = plotPosition(i);
+      const cell = w.localEnvironment?.plots[i];
+      if (!cell) continue;
+      const dryness = 1 - cell.health / 100;
+      const patch = new Path2D();
+      patch.ellipse(x, y, 3.3, 3, Math.sin(i * 2.1) * 0.5, 0, Math.PI * 2);
+      ctx.save();
+      ctx.clip(patch);
+      ctx.globalAlpha = Math.min(0.7, dryness * 0.8);
+      ctx.fillStyle = material(1, 6);
+      ctx.fillRect(x - 5, y - 5, 10, 10);
+      if (cell.scorch > 1) {
+        ctx.globalAlpha = (cell.scorch / 100) * 0.65;
+        ctx.fillStyle = "#211c19";
+        ctx.fillRect(x - 5, y - 5, 10, 10);
+      }
+      ctx.restore();
+    }
     const autumn = autumnColour(w.tick),
       snow = snowCover(w.tick) * (stage >= 2 ? 0.15 : 1);
     if (autumn > 0) {
@@ -215,7 +236,7 @@ export class PaintedTerrain {
         ctx.strokeStyle =
           stage >= 2
             ? "#65574d"
-            : w.vegetation > 40 && stage === 0
+            : localHealth(w, x, y) > 40 && stage === 0
               ? "#76813f"
               : "#9d8046";
         ctx.lineWidth = 0.1;

@@ -27,6 +27,20 @@ export function restore(text: string): World {
   w.usage = w.usage.map(validateEvent);
   const finite = (n: unknown, lo = 0, hi = 100): n is number =>
     typeof n === "number" && Number.isFinite(n) && n >= lo && n <= hi;
+  if (w.localEnvironment !== undefined) {
+    const local = w.localEnvironment;
+    if (
+      !local ||
+      !Array.isArray(local.trees) ||
+      local.trees.length !== 135 ||
+      !Array.isArray(local.plots) ||
+      local.plots.length !== 36 ||
+      ![...local.trees, ...local.plots].every(
+        (cell) => cell && finite(cell.health) && finite(cell.scorch),
+      )
+    )
+      throw Error("État local du terrain invalide.");
+  }
   const str = (v: unknown) => typeof v === "string" && v.length < 300;
   const point = (p: unknown) =>
     Array.isArray(p) && p.length === 2 && p.every((n) => finite(n, 0, 30));

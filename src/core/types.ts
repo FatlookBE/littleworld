@@ -73,6 +73,7 @@ export interface Settings {
   usageSession?: string;
 }
 export interface World {
+  localEnvironment?: import("./local-environment").LocalEnvironment;
   disasters?: import("./apocalypse").Disaster[];
   version: 1;
   seed: number;

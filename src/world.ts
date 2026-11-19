@@ -1,3 +1,4 @@
+import { treePosition } from "./core/local-environment";
 import { drawCritters } from "./critters";
 import { bridgeRows, riverCenter, riverHalfWidth } from "./core/navigation";
 import { remainsStage } from "./core/lifecycle";
@@ -206,11 +207,19 @@ export class WorldRenderer {
       top,
     );
   }
-  tree(x: number, y: number, height: number, p: number, t: number) {
+  tree(
+    x: number,
+    y: number,
+    height: number,
+    p: number,
+    t: number,
+    health = 100,
+    scorch = 0,
+  ) {
     const [sx, sy] = this.project(x, y);
     this.ellipse(sx + 8 * this.scale, sy + 2 * this.scale, 13, 5, "#172e242b");
     if (this.environment.ready) {
-      const dead = noise(x, y) < p * 0.55;
+      const dead = health < 22 || scorch > 65;
       const broadleaf = !dead && noise(x, y) > 0.5;
       // Broadleaf trees colour, then shed their leaves; conifers keep theirs.
       const bare = broadleaf && noise(x + 3.1, y) < bareBranches(this.tick);
@@ -220,11 +229,14 @@ export class WorldRenderer {
         snow = snowCover(this.tick);
       this.ctx.save();
       // Sepia keeps trunks brown while foliage turns gold to rust.
-      const turn = autumn * (0.65 + noise(x, y + 7) * 0.35);
+      const turn = Math.max(
+        autumn * (0.65 + noise(x, y + 7) * 0.35),
+        ((100 - health) / 100) * 0.8,
+      );
       this.ctx.filter =
         `sepia(${0.75 * turn}) hue-rotate(${-14 * turn}deg) ` +
         `saturate(${(1 - p * 0.65) * (1 + 0.9 * turn) * (1 - 0.45 * snow)}) ` +
-        `brightness(${(1 - p * 0.15) * (1 + 0.14 * snow)})`;
+        `brightness(${(1 - p * 0.15) * (1 - scorch * 0.005) * (1 + 0.14 * snow)})`;
       this.environment.draw(
         this.ctx,
         index,
@@ -1204,8 +1216,7 @@ export class WorldRenderer {
         objects.push({ depth: b.x + b.y + 1.5, draw: () => this.house(b, w) });
     // Trees surround the settlement, leaving the inhabited center readable.
     for (let i = 0; i < 135; i++) {
-      const x = 1 + noise(i, 1) * 27,
-        y = 1 + noise(i, 2) * 27;
+      const [x, y] = treePosition(i);
       if (
         Math.abs(x - riverX(y)) < 2.4 ||
         Math.abs(y - 15) < 1.4 ||
@@ -1214,7 +1225,16 @@ export class WorldRenderer {
         continue;
       objects.push({
         depth: x + y,
-        draw: () => this.tree(x, y, 25 + noise(i, 3) * 25, p, this.time),
+        draw: () =>
+          this.tree(
+            x,
+            y,
+            25 + noise(i, 3) * 25,
+            p,
+            this.time,
+            w.localEnvironment?.trees[i]?.health ?? w.vegetation,
+            w.localEnvironment?.trees[i]?.scorch ?? 0,
+          ),
       });
     }
     for (const v of w.villagers)

@@ -1,3 +1,4 @@
+import { updateLocalEnvironment, buildingWear } from "./local-environment";
 import { updateNutrition } from "./nutrition";
 import { spreadDestination, moveResident } from "./crowd";
 import { apocalypse } from "./apocalypse";
@@ -476,12 +477,13 @@ export function step(w: World) {
         (100 - w.food) * 0.0007 -
         (0.06 * w.cooperation) / 100),
   );
-  for (const b of w.buildings)
+  updateLocalEnvironment(w);
+  for (const b of w.buildings) {
+    const wear = buildingWear(w, b);
     b.condition = clamp(
-      b.condition -
-        Math.max(0, p - 0.2) * 0.16 * (0.85 + (b.id % 5) * 0.08) +
-        (p < 0.2 ? 0.006 : 0),
+      b.condition - Math.max(0, p - 0.2) * 0.16 * wear.exposure + wear.repair,
     );
+  }
   for (const v of alive) {
     if (v.health <= 0) {
       die(w, v);

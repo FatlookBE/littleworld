@@ -208,3 +208,9 @@ Point 5 : `npm start` lance l’application sur 5174 et le pont sur 5175, depuis
 Point 6 : bandes progressives autour des trois seuils, avec zones irrégulières opaques complémentaires partagées par tortue, éléphants, falaises et terrain. Repli commun sur les assets chargés, état direct en réduction des animations. L’entrée de dégradation dépend désormais de la simulation, sans lissage par nombre d’images ; pause et restauration gardent le bon état.
 
 111 tests / 26 fichiers, build et lint réussis. Revue indépendante : **9/10** sur code et comportement testé, sans contrôle visuel indépendant. Agent principal : démo observée dans le navigateur aux pressions 24 et 36, passage sain/desséché sans double silhouette visible. Les trois transitions intermédiaires n'ont pas toutes été inspectées visuellement. Détails : `docs/decay-transitions.md`.
+
+### Dégradation locale — 19 novembre 2026
+
+Point 7 : santé et brûlure persistantes par arbre et zone de sol ; exposition géographique fixe, eau/ruisseau et sécheresse, effets locaux des feux et maladies, récupération lente. Les conditions des bâtiments varient avec l’exposition et l’entretien des occupants. Les dessins morts/endommagés et les matériaux peints existants sont réutilisés. Anciennes sauvegardes compatibles, nouvelles valeurs bornées et validées.
+
+117 tests / 27 fichiers, build et lint réussis. Revue indépendante : **9/10** sur code/comportement testé. Contrôle principal en démo nocturne effectué, précision visuelle limitée ; pas de validation visuelle indépendante. Documentation : `docs/local-degradation.md`.
