@@ -18,6 +18,10 @@ export const decayOf = (w: {
     Math.min(1, (w.pressure / 100) * 0.7 + lack * 0.15 + dead * 0.15),
   );
 };
+/** Four distinct painted stages, driven by the same scarcity as the village. */
+export const turtleStage = (decay: number) =>
+  decay >= 0.78 ? 3 : decay >= 0.48 ? 2 : decay >= 0.22 ? 1 : 0;
+
 /** Individually animated painted carriers. Every pose uses a constant scale and anchor. */
 export class WorldFoundation {
   image = new Image();
@@ -31,20 +35,43 @@ export class WorldFoundation {
     true,
   );
   turtle = new AnimationAtlas("/assets/turtle-swim.png", 4, 4, 0, false, true);
-  private ruinedTurtle = new TurtleDetail("ruined");
-  private ruinedElephants = new AnimationAtlas(
-    "/assets/elephant-ruined.webp",
-    4,
-    2,
-    0,
-    false,
-    true,
-  );
+  private turtleStages = [
+    this.turtleDetail,
+    new TurtleDetail("withered"),
+    new TurtleDetail("ruined"),
+    new TurtleDetail("horror"),
+  ];
+  private elephantStages = [
+    this.elephants,
+    ...["withered", "ruined", "horror"].map(
+      (stage) =>
+        new AnimationAtlas(
+          `/assets/elephant-${stage}-cycle.png`,
+          4,
+          2,
+          0,
+          false,
+          true,
+        ),
+    ),
+  ];
+  activeStage = 0;
+  private slabs = [this.image];
+  private slabReady = [false, false, false, false];
   ready = false;
   constructor() {
     this.image.onload = () => {
       this.ready = true;
+      this.slabReady[0] = true;
     };
+    ["withered", "ruined", "horror"].forEach((name, i) => {
+      const image = new Image();
+      this.slabs.push(image);
+      image.onload = () => {
+        this.slabReady[i + 1] = true;
+      };
+      image.src = `/assets/world-slab-${name}.png`;
+    });
     this.image.src = "/assets/world-slab.png";
   }
   draw(
@@ -57,10 +84,17 @@ export class WorldFoundation {
   ) {
     if (!this.ready) return false;
     const pose = turtlePose(time);
-    const turtle =
-      decay >= 0.36 && this.ruinedTurtle.ready
-        ? this.ruinedTurtle
-        : this.turtleDetail;
+    // Fall back to the nearest loaded earlier stage while HD sheets load.
+    let stage = turtleStage(decay);
+    while (
+      stage > 0 &&
+      (!this.turtleStages[stage].ready ||
+        !this.elephantStages[stage].ready ||
+        !this.slabReady[stage])
+    )
+      stage--;
+    this.activeStage = stage;
+    const turtle = this.turtleStages[stage];
     if (!turtle.draw(ctx, pose, cx, cy + 520 * scale, 1050 * scale))
       this.turtle.draw(
         ctx,
@@ -79,11 +113,8 @@ export class WorldFoundation {
       [2, -145, 855, 510, 0],
       [3, 145, 855, 510, 1],
     ]) {
-      // Stagger the herd's transformation, showing one painted pose per animal.
-      const atlas =
-        decay >= 0.12 + id * 0.14 && this.ruinedElephants.ready
-          ? this.ruinedElephants
-          : this.elephants;
+      // All carriers share the turtle's degradation stage and fixed appuis.
+      const atlas = this.elephantStages[stage];
       atlas.draw(
         ctx,
         carrierPose(time, id),
@@ -129,7 +160,7 @@ export class WorldFoundation {
         cx - 768 * horizontalScale,
         front - 670 * depthScale - 768 * shear,
       );
-      ctx.drawImage(this.image, 0, 0);
+      ctx.drawImage(this.slabs[stage], 0, 0);
       ctx.restore();
     }
     ctx.restore();

@@ -183,6 +183,16 @@ export class ResidentAtlas {
       true,
     ),
   };
+  // Authored reaction rows have unequal margins; keep neighbouring hats/feet out.
+  gauntReactions = new AnimationAtlas(
+    "/assets/residents-gaunt-hit.png",
+    4,
+    4,
+    0,
+    true,
+    true,
+    [0, 265, 537, 793, 1024],
+  );
   reactions = new AnimationAtlas("/assets/residents-hit.png", 4, 4);
   variants = new Image();
   walks = new AnimationAtlas("/assets/residents-walk.png", 8, 3, 24);
@@ -271,12 +281,15 @@ export class ResidentAtlas {
     scale: number,
   ) {
     const skin = residentSkin(v.id);
+    const gaunt = nutritionStage(v) === 2;
+    const reactions =
+      gaunt && this.gauntReactions.ready ? this.gauntReactions : this.reactions;
     const hitAge = v.hitAt === undefined ? Infinity : w.tick - v.hitAt;
-    if (hitAge >= 0 && hitAge < 4 && this.reactions.ready) {
+    if (hitAge >= 0 && hitAge < 4 && reactions.ready) {
       const phase = w.settings.reducedMotion
         ? 1
         : Math.min(3, Math.floor(Math.max(0, time / 0.2 - v.hitAt!)));
-      return this.reactions.draw(
+      return reactions.draw(
         ctx,
         skin * 4 + phase,
         x,
@@ -286,7 +299,6 @@ export class ResidentAtlas {
       );
     }
     const activity = residentAction(v, w);
-    const gaunt = nutritionStage(v) === 2;
     const activityAtlas =
       activity && gaunt && this.gauntActivities[activity].ready
         ? this.gauntActivities[activity]
@@ -307,6 +319,16 @@ export class ResidentAtlas {
     const fighting = w.disasters?.some(
       (e) => e.kind === "fight" && e.people.includes(v.id),
     );
+    if (gaunt && fighting && this.gauntReactions.ready) {
+      return this.gauntReactions.draw(
+        ctx,
+        skin * 4 + loopFrame(time, 4, 4, v.id, w.settings.reducedMotion),
+        x,
+        y,
+        56 * scale,
+        v.id % 2 === 1,
+      );
+    }
     if (gaunt && !fighting && this.gauntWalk.ready) {
       const moving = v.route.length > 0;
       const target = v.route[0] ?? v.target;

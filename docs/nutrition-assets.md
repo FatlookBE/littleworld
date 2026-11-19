@@ -17,3 +17,13 @@ Références respectives : `residents-gather.png`, `residents-work.png`, `reside
 ## Simulation
 
 L’indicateur `malnutrition` s’accumule après une faim prolongée (>65) et diminue lentement lorsque l’habitant est nourri (<35). Teinte progressivement fatiguée ; silhouette amaigrie à55. La récupération ne survient pas instantanément au premier repas. Valeur persistée, bornée0–100 ; sauvegardes anciennes compatibles avec absence du champ. Les morts conservent leur dernière valeur et utilisent les restes existants.
+
+## Intégration complète — 18 novembre 2026
+
+Les planches manquantes de travail, boisson et repas ont été générées en 1536 × 1024, six colonnes et quatre identités, avec `image_gen`. Références : planche saine correspondante et `residents-gaunt-gather.png`. Consigne : conserver les six poses, accessoires, costumes, échelle et appuis ; bras et torse plus fins, joues creusées, vêtements lâches ; adultes vivants entièrement vêtus, fond alpha transparent, contours peints nets.
+
+La planche `residents-gaunt-hit.png` complète les transitions avec quatre réactions par identité. Ces poses de recul et de rétablissement servent également aux combats. Les coups utilisent les limites réelles des rangées : 0, 265, 537, 793, 1024. La planche spécifique de combat a été écartée : son fond restait visible après deux tentatives de détourage génératif. Les personnages restent amaigris pendant les coups et les combats, ainsi que pendant la marche et les quatre activités. La réduction des animations reste respectée.
+
+Prompt des réactions : « Same four adult fantasy villagers, slimmer tired appearance, narrow arms/torso, hollow tired cheeks, loose clothes. Exact four columns four rows, same flinch/recoil/recover poses, fixed scale and feet, crisp painted fantasy, transparent alpha, no wounds or exposed bones. »
+
+Preuves visuelles : `output/playwright/nutrition-progression.png` et `output/playwright/gaunt-reactions.png`.

@@ -64,3 +64,25 @@ Le chargement recale chaque couronne et largeur de carapace sur les mêmes appui
 Les planches `elephant-decayed.png` et `turtle-decayed.png` ont été générées avec ImageGen à partir des cycles de poses des porteurs. La planche `void-fauna.png` contient une méduse à bois et une baleine cosmique, générées dans le même style peint.
 
 Les planches générées avec ImageGen `wraith-cycle.png` (4 × 2, vol en boucle) et `wolf-cycle.png` (4 × 4, course puis morsure) utilisent des cellules transparentes. Le spectre porte une cape gris-vert en lambeaux et une agrafe ocre. Le loup au pelage gris est peint de trois quarts, avec la même lumière chaude venant du haut à gauche.
+
+## Amaigrissement et tortue volcanique HD — 18 novembre 2026
+
+Les planches `residents-gaunt-work.png`, `residents-gaunt-drink.png`, `residents-gaunt-eat.png`, `residents-gaunt-hit.png` ont été générées avec `image_gen`. Références, consignes et intégration : `docs/nutrition-assets.md`.
+
+`turtle-ruined-hd-0.png` à `turtle-ruined-hd-3.png` remplacent les petites poses dégradées agrandies. Chaque planche transparente mesure 1536 × 1024 et contient deux poses de 768 pixels de large. Références : paire saine `turtle-detail-N.png` pour la pose et ancienne carapace volcanique pour la matière. Le filtre de netteté artificielle a été retiré. La carapace est fixe pour conserver les appuis des éléphants ; les membres suivent les huit poses.
+
+Prompt : « HIGH DEFINITION replacement sprite sheet, 1536x1024 exactly TWO 768x1024 cells. Preserve healthy-reference pose/layout/size, crown, camera, head and flipper positions. Paint directly at full resolution, crisp individual scales and clean ink lines. Dark volcanic basalt shell plates with bright orange lava cracks. Clean readable head, one dim yellow iris with dark pupil, recognisable intact muzzle, subtly chipped worn mouth, no gore, dangling moss, filaments, orange patches on neck, blur or noisy oversharpening. Gray-brown weathered skin, clear flipper scales. True transparent alpha, no halo, haze, grid or text. Preserve the two distinct flipper poses of this continuous eight-frame swimming cycle. »
+
+Comparaison : `output/playwright/ruined-turtle-hd-comparison.png`. Cycle : `output/playwright/ruined-turtle-hd-poses.png`.
+
+## Quatre stades de tortue
+
+`turtle-withered-hd-0.png` à `-3.png` et `turtle-horror-hd-0.png` à `-3.png` : huit nouvelles planches HD générées avec l'outil intégré `image_gen`. Stade desséché et stade final mort-vivant, chacun avec huit poses articulées. Prompts, références et seuils : `docs/turtle-decay-assets.md`.
+
+## Éléphants : quatre stades assortis aux tortues
+
+`elephant-withered-cycle.png`, `elephant-ruined-cycle.png`, `elephant-horror-cycle.png` : trois planches 1536 × 1024, huit poses chacune, créées avec l'outil intégré `image_gen`. Matières et anatomie assorties aux tortues desséchées, volcaniques et mortes-vivantes. Le stade sain reste inchangé. Prompts et références : `docs/elephant-decay-assets.md`.
+
+## Couche terrestre assortie
+
+`world-slab-{withered,ruined,horror}.png` et `terrain-{withered,ruined,horror}.png` : six variantes peintes générées avec l'outil intégré `image_gen`, pour les falaises et les matériaux de surface. Références et prompts : `docs/earth-decay-assets.md`.

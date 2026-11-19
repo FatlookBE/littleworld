@@ -19,6 +19,7 @@ export class AnimationAtlas {
   anchors: number[] = [];
   columnOffset: number;
   heights: number[] = [];
+  private rowCuts?: readonly number[];
   constructor(
     path: string,
     columns: number,
@@ -26,7 +27,9 @@ export class AnimationAtlas {
     columnOffset = 0,
     anchorBase = false,
     sameScale = false,
+    rowCuts?: readonly number[],
   ) {
+    this.rowCuts = rowCuts;
     this.columnOffset = columnOffset;
     this.columns = columns;
     this.rows = rows;
@@ -43,8 +46,8 @@ export class AnimationAtlas {
         for (let col = 0; col < columns; col++) {
           const x0 = this.columnEdge(col),
             x1 = this.columnEdge(col + 1);
-          const y0 = Math.round((row * c.height) / rows),
-            y1 = Math.round(((row + 1) * c.height) / rows);
+          const y0 = this.rowEdge(row),
+            y1 = this.rowEdge(row + 1);
           let top = y1,
             bottom = y0 - 1;
           for (let y = y0; y < y1; y++)
@@ -79,6 +82,11 @@ export class AnimationAtlas {
     };
     this.image.src = path;
   }
+  rowEdge(row: number) {
+    return (
+      this.rowCuts?.[row] ?? Math.round((row * this.image.height) / this.rows)
+    );
+  }
   columnEdge(col: number) {
     if (col === 0) return 0;
     // The fourth/fifth poses are closer in this authored walking sheet.
@@ -102,8 +110,8 @@ export class AnimationAtlas {
       col = index % this.columns;
     const x0 = this.columnEdge(col),
       x1 = this.columnEdge(col + 1);
-    const y0 = Math.round((row * this.image.height) / this.rows),
-      y1 = Math.round(((row + 1) * this.image.height) / this.rows);
+    const y0 = this.rowEdge(row),
+      y1 = this.rowEdge(row + 1);
     const k = height / this.heights[row];
     ctx.save();
     ctx.translate(x, y);

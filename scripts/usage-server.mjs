@@ -4,6 +4,7 @@
 // Reads Claude Code transcripts (~/.claude/projects) and Codex sessions
 // (~/.codex/sessions). Conversation text is never kept or sent. Listens on
 // loopback only and answers only to local browser origins.
+import { parseCodexUsage } from "./codex-usage.mjs";
 import { createServer } from "node:http";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { homedir } from "node:os";
@@ -60,6 +61,7 @@ function claudeEvents(text) {
       at: r.timestamp,
       origin: "claude-code",
       provenance: "measured",
+      ...(typeof r.cwd === "string" ? { project: r.cwd } : {}),
       input,
       output,
       cached,
@@ -68,55 +70,44 @@ function claudeEvents(text) {
   }
   return [...byId.values()];
 }
-function codexEvents(text, file) {
-  // token_count carries cumulative totals for the session: one event, growing.
-  let id = file.match(/[0-9a-f]{8}-[0-9a-f-]{27,}/)?.[0] ?? file,
-    at,
-    total;
-  for (const r of lines(text)) {
-    at ??= r.timestamp;
-    const t =
-      r.payload?.type === "token_count" && r.payload.info?.total_token_usage;
-    if (t) total = t;
-  }
-  if (!total || !at) return [];
-  const output = n(total.output_tokens),
-    reasoning = n(total.reasoning_output_tokens);
-  return [
-    {
-      id,
-      session: id,
-      at,
-      origin: "codex",
-      provenance: "measured",
-      input: n(total.input_tokens),
-      output,
-      cached: Math.min(n(total.cached_input_tokens), n(total.input_tokens)),
-      ...(reasoning && reasoning <= output ? { reasoning } : {}),
-    },
-  ];
-}
 
 const cache = new Map(); // file -> { key, events }
 function collect() {
   const since = Date.now() - days * 86400e3,
-    out = [];
+    out = [],
+    completeCodex = new Set(),
+    incompleteCodex = new Set();
   for (const [kind, root] of Object.entries(roots))
     for (const [file, s] of walk(root, since)) {
       const key = `${s.mtimeMs}:${s.size}`;
       let hit = cache.get(file);
       if (hit?.key !== key) {
         const text = readFileSync(file, "utf8");
+        const parsed = kind === "codex" ? parseCodexUsage(text, file) : null;
         hit = {
           key,
-          events:
-            kind === "claude" ? claudeEvents(text) : codexEvents(text, file),
+          events: parsed ? parsed.events : claudeEvents(text),
+          parsed,
         };
         cache.set(file, hit);
       }
       out.push(...hit.events);
+      if (hit.parsed)
+        (hit.parsed.complete ? completeCodex : incompleteCodex).add(
+          hit.parsed.session,
+        );
     }
-  return out.filter((e) => Date.parse(e.at) >= since);
+  // Codex daily replacements include the complete history of recently modified
+  // session files, so replacing a legacy cumulative total never drops old days.
+  const events = out.filter(
+    (e) => e.origin === "codex" || Date.parse(e.at) >= since,
+  );
+  return {
+    version: 2,
+    events,
+    codexSessions: [...completeCodex].filter((id) => !incompleteCodex.has(id)),
+    incompleteCodexSessions: incompleteCodex.size,
+  };
 }
 
 const local = /^http:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/;
@@ -135,7 +126,10 @@ createServer((req, res) => {
   }
   try {
     res.writeHead(200, { "Content-Type": "application/json" });
-    res.end(JSON.stringify(collect()));
+    const snapshot = collect();
+    res.end(
+      JSON.stringify(req.url.includes("format=2") ? snapshot : snapshot.events),
+    );
   } catch (e) {
     res.writeHead(500).end(String(e));
   }
