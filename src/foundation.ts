@@ -1,3 +1,8 @@
+import {
+  decayTransition,
+  paintDecayTransition,
+  type DecayTransition,
+} from "./decay-transition";
 import { TurtleDetail } from "./turtle-detail";
 import { AnimationAtlas } from "./animation";
 import { carrierPose, turtlePose } from "./carrier-animation";
@@ -56,6 +61,7 @@ export class WorldFoundation {
     ),
   ];
   activeStage = 0;
+  activeTransition: DecayTransition = { from: 0, to: 0, progress: 0 };
   private slabs = [this.image];
   private slabReady = [false, false, false, false];
   ready = false;
@@ -81,19 +87,33 @@ export class WorldFoundation {
     scale: number,
     time = 0,
     decay = 0,
+    terrainReady: readonly boolean[] = [true, true, true, true],
+    reduced = false,
   ) {
     if (!this.ready) return false;
+    const available = this.turtleStages.map(
+      (atlas, stage) =>
+        atlas.ready &&
+        this.elephantStages[stage].ready &&
+        this.slabReady[stage] &&
+        terrainReady[stage],
+    );
+    this.activeTransition = decayTransition(decay, available, reduced);
+    this.activeStage = this.activeTransition.from;
+    paintDecayTransition(ctx, this.activeTransition, [cx, cy], scale, (stage) =>
+      this.drawStage(ctx, cx, cy, scale, time, stage),
+    );
+    return true;
+  }
+  private drawStage(
+    ctx: CanvasRenderingContext2D,
+    cx: number,
+    cy: number,
+    scale: number,
+    time: number,
+    stage: number,
+  ) {
     const pose = turtlePose(time);
-    // Fall back to the nearest loaded earlier stage while HD sheets load.
-    let stage = turtleStage(decay);
-    while (
-      stage > 0 &&
-      (!this.turtleStages[stage].ready ||
-        !this.elephantStages[stage].ready ||
-        !this.slabReady[stage])
-    )
-      stage--;
-    this.activeStage = stage;
     const turtle = this.turtleStages[stage];
     if (!turtle.draw(ctx, pose, cx, cy + 520 * scale, 1050 * scale))
       this.turtle.draw(

@@ -1,3 +1,4 @@
+import { paintDecayTransition, type DecayTransition } from "./decay-transition";
 import { drawRiver } from "./water";
 import { autumnColour, snowCover } from "./core/seasons";
 import type { World } from "./core/types";
@@ -37,7 +38,31 @@ export class PaintedTerrain {
       image.src = `/assets/terrain-${name}.png`;
     });
   }
+  get readyStages() {
+    return [0, 1, 2, 3].map((stage) =>
+      Boolean(this.stageMaterials[stage]?.length),
+    );
+  }
   draw(
+    ctx: CanvasRenderingContext2D,
+    w: World,
+    origin: [number, number],
+    scale: number,
+    water: { level: number; wet: number },
+    time: number,
+    transition: DecayTransition = { from: 0, to: 0, progress: 0 },
+  ) {
+    if (!this.ready) return false;
+    paintDecayTransition(
+      ctx,
+      transition,
+      [origin[0], origin[1] + 333.5 * scale],
+      scale,
+      (stage) => this.drawStage(ctx, w, origin, scale, water, time, stage),
+    );
+    return true;
+  }
+  private drawStage(
     ctx: CanvasRenderingContext2D,
     w: World,
     origin: [number, number],

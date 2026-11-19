@@ -83,7 +83,7 @@ export class WorldRenderer {
   pan: Point = [0, 0];
   /** Transient camera offset (earthquakes); never saved or user-driven. */
   shake: Point = [0, 0];
-  /** Smoothed rot of the carriers, 0 to 1. */
+  /** Rot derived from simulation state: stable in pause and after reload. */
   decay = 0;
   hits: Hit[] = [];
   width = 0;
@@ -823,7 +823,7 @@ export class WorldRenderer {
       Math.sin(time * 61) * power,
       Math.cos(time * 53) * power * 0.7,
     ];
-    this.decay += (decayOf(w) - this.decay) * 0.03;
+    this.decay = decayOf(w);
     this.hits = [];
     c.clearRect(0, 0, this.width, this.height);
     const bg = c.createRadialGradient(
@@ -851,7 +851,18 @@ export class WorldRenderer {
     const [worldX, worldY] = this.project(14.5, 14.5);
     if (!w.settings.reducedMotion)
       drawCritters(c, this.time, this.width, this.height, worldX, worldY, s);
-    if (!this.foundation.draw(c, worldX, worldY, s, this.time, this.decay)) {
+    if (
+      !this.foundation.draw(
+        c,
+        worldX,
+        worldY,
+        s,
+        this.time,
+        this.decay,
+        this.terrain.readyStages,
+        w.settings.reducedMotion,
+      )
+    ) {
       if (!this.environment.ready) {
         this.shape(
           [
@@ -1004,7 +1015,7 @@ export class WorldRenderer {
       s,
       { level, wet: wetLevel },
       this.time,
-      this.foundation.activeStage,
+      this.foundation.activeTransition,
     );
     const wet = 1 - w.vegetation / 100;
     const riverX = (y: number) => 3.7 + Math.sin(y * 0.24) * 1.6;

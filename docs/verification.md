@@ -202,3 +202,9 @@ Point 4 : état visible dans le bouton, dernière réussite conservée, nombre d
 Point 5 : `npm start` lance l’application sur 5174 et le pont sur 5175, depuis le répertoire du projet. Vérification des deux ports avant création des enfants, ports stricts, refus explicite si occupés. Ctrl+C/SIGTERM arrête les enfants ; l’échec d’un service arrête l’autre. `npm run dev` et `npm run bridge` restent disponibles séparément.
 
 106 tests / 24 fichiers, build et lint réussis. Revue indépendante : **9/10**. Contrôle réel : HTTP 200 pour les deux services, second lancement refusé sans arrêt du premier, Ctrl+C libère les deux ports, redémarrage réussi. Services laissés actifs.
+
+### Transitions progressives du monde — 19 novembre 2026
+
+Point 6 : bandes progressives autour des trois seuils, avec zones irrégulières opaques complémentaires partagées par tortue, éléphants, falaises et terrain. Repli commun sur les assets chargés, état direct en réduction des animations. L’entrée de dégradation dépend désormais de la simulation, sans lissage par nombre d’images ; pause et restauration gardent le bon état.
+
+111 tests / 26 fichiers, build et lint réussis. Revue indépendante : **9/10** sur code et comportement testé, sans contrôle visuel indépendant. Agent principal : démo observée dans le navigateur aux pressions 24 et 36, passage sain/desséché sans double silhouette visible. Les trois transitions intermédiaires n'ont pas toutes été inspectées visuellement. Détails : `docs/decay-transitions.md`.
