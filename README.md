@@ -8,10 +8,14 @@ Node 22.12+ ou 24 LTS, npm.
 
 ```sh
 npm install
-npm run dev -- --host 127.0.0.1
+npm start
 ```
 
-Ouvrir l’URL Vite, normalement http://127.0.0.1:5173. Garder le même port/origine pour retrouver IndexedDB. `npm run build` produit `dist`, `npm run preview` sert le build ; `npm test` vérifie la simulation et le comptage ; `npm run lint` vérifie le code.
+Ouvrir **http://localhost:5174/**. `npm start` lance l’application (5174) et le pont de compteurs Codex/Claude Code (5175). **Ctrl+C arrête les deux services.** Si un port est occupé, le démarrage s’arrête avec une explication, sans changer de port ni arrêter un processus existant. Arrêtez les anciennes commandes avant de relancer.
+
+Le pont lit les compteurs et métadonnées de projet dans les journaux locaux ; aucune conversation n’est envoyée à un service distant. Pour l’application seule : `npm run dev`. Pour le pont seul : `npm run bridge`. Les ports sont fixes par défaut.
+
+Garder la même adresse (notamment `localhost` ou `127.0.0.1`) pour retrouver la sauvegarde IndexedDB ; ces deux origines ont des sauvegardes distinctes. `npm run build` produit `dist`, `npm run preview` sert le build ; `npm test` vérifie la simulation et le comptage ; `npm run lint` vérifie le code.
 
 ## Observer
 
@@ -19,32 +23,35 @@ Ouvrir l’URL Vite, normalement http://127.0.0.1:5173. Garder le même port/ori
 - Cliquer un habitant ou ouvrir **Habitants & lieux** : besoins, proches, faveurs et souvenirs persistants. Les histoires suivent les ressources et les rencontres, pas une cinématique.
 - **Chronique** : récoltes perdues, partage d’eau, disputes, réparations et décès. Le bouton **i** explique la causalité et permet une entraide fictive.
 - Glisser ou flèches pour déplacer la caméra ; molette ou boutons pour zoomer ; Espace pour mettre en pause ; Échap pour fermer. Tous les habitants et lieux sont accessibles sans le canvas. Disposition compacte pour une petite fenêtre de navigateur ; aucun mode système toujours au premier plan.
-- Sauvegarde locale toutes les cinq secondes et à la mise en arrière-plan. Exporter dans **DÉMO → Données** pour sauvegarder ou avant réinitialisation. Une confirmation protège le reset. Rattrapage hors ligne limité à 300 ticks, sans création d’usage démo.
+- Sauvegarde locale toutes les cinq secondes et à la mise en arrière-plan. Exporter dans **Synchro & données** pour sauvegarder ou avant réinitialisation. Une confirmation protège le reset. Rattrapage hors ligne limité à 300 ticks, sans création d’usage démo.
 
 ## Usage réel : import explicite
 
-**DÉMO signifie usage simulé. Aucune lecture automatique de cette conversation Codex.** Le flux officiel `codex exec --json` fournit les compteurs de tours terminés. Pour enregistrer uniquement les métadonnées d’une tâche que vous lancez délibérément :
+**DÉMO signifie usage simulé.** Avec `npm start`, le pont local lit les compteurs des sessions Codex et Claude Code. Pour fonctionner uniquement par import manuel, utilisez `npm run dev` sans lancer le pont. Le flux officiel `codex exec --json` fournit les compteurs de tours terminés. Pour enregistrer uniquement les métadonnées d’une tâche que vous lancez délibérément :
 
 ```sh
 codex exec --json "votre propre tâche" | node scripts/usage-only.mjs > usage.json
 ```
 
-Importer le résultat via **DÉMO → Format → Événements normalisés — JSON**. Ou importer un flux JSONL Codex complet : seuls les compteurs sont conservés. Lancer Codex consomme des tokens ; Tokenfall ne le lance jamais à votre place. La provenance mesurée est déclarée par le producteur, pas authentifiée cryptographiquement ni représentative de tout le compte.
+Importer le résultat via **Synchro & données → Format → Événements normalisés — JSON**. Ou importer un flux JSONL Codex complet : seuls les compteurs sont conservés. Lancer Codex consomme des tokens ; Tokenfall ne le lance jamais à votre place. La provenance mesurée est déclarée par le producteur, pas authentifiée cryptographiquement ni représentative de tout le compte.
 
 Utiliser une capture complète identique pour les imports répétés. Ne pas concaténer des fragments repris : le flux documenté n’offre pas d’identifiant de tour stable, l’adaptateur utilise thread + ordre. Sans date fournie, la date est inconnue et exclue du total UTC du jour. Voir [les décisions et limites d’intégration](docs/codex-integration.md).
 
 ### Synchronisation automatique (Claude Code + Codex)
 
 ```sh
-node scripts/usage-server.mjs      # terminal 1 : pont local, lecture seule, 127.0.0.1:5175
-npm run dev -- --host 127.0.0.1    # terminal 2
+npm start
 ```
 
-L’app interroge le pont toutes les 15 secondes, sans bouton : si le pont tourne, le monde suit ton usage ; sinon il vit seul. Le budget s’adapte : il vaut deux fois la moyenne quotidienne des 7 derniers jours (cache exclu), donc une journée ordinaire donne environ 50 % de pression. Il lit les transcripts Claude Code (`~/.claude/projects`, qui couvrent aussi les chats ADE) et les sessions Codex (`~/.codex/sessions`) des 3 derniers jours, et n’expose que des compteurs. À la première activation l’historique existant est enregistré sans vider le village ; seule l’activité suivante crée de la pression. Le pont n’écoute que sur la boucle locale et refuse les autres origines.
+L’application et le pont sont démarrés ensemble. **Synchro & données** affiche l’état de connexion, la dernière réussite et un bouton **Actualiser**. Le suivi reprend automatiquement quinze secondes après chaque tentative ; une tentative est limitée à huit secondes.
+
+Le budget adaptatif vaut deux fois la moyenne des sept derniers jours renseignés avant aujourd’hui, cache connu exclu. Le pont lit les fichiers Claude Code et Codex modifiés récemment (trois jours par défaut), conserve l’historique Codex nécessaire à la migration et expose les compteurs ainsi que le projet déclaré. Les conversations ne sont pas envoyées à un service distant. Les historiques incomplets sont signalés. Le pont écoute uniquement sur la boucle locale et accepte les origines locales.
+
+Pour lancer les services séparément : `npm run bridge` et `npm run dev`. Pour modifier la fenêtre de lecture du pont seul : `node scripts/usage-server.mjs 5175 7`. Gardez le port 5175 attendu par l’application.
 
 ### Claude Code (et ADE)
 
-Claude Code, et donc les chats ADE qui s’appuient sur lui, écrit chaque session dans `~/.claude/projects/<projet>/<session>.jsonl`. Importer ce fichier via **DÉMO → Format → Claude Code / ADE — transcript JSONL** : seuls l’identifiant du message, la session, l’horodatage et les compteurs de tokens sont lus ; le contenu des conversations est ignoré et jamais conservé. Ré-importer le même fichier (même après de nouveaux messages) ne compte pas deux fois. Import toujours explicite, jamais automatique.
+Claude Code, et donc les chats ADE qui s’appuient sur lui, écrit chaque session dans `~/.claude/projects/<projet>/<session>.jsonl`. Importer ce fichier via **Synchro & données → Format → Claude Code / ADE — transcript JSONL** : seuls l’identifiant du message, la session, l’horodatage et les compteurs de tokens sont lus ; le contenu des conversations est ignoré et jamais conservé. Ré-importer le même fichier (même après de nouveaux messages) ne compte pas deux fois. Import toujours explicite, jamais automatique.
 
 **Directement depuis ADE** : ADE tient un registre par tour pour Claude et Codex (`ade usage turns`). Exporter les sept derniers jours, puis importer le fichier en **Événements normalisés — JSON** :
 

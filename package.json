@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "start": "node scripts/start.mjs",
+    "bridge": "node scripts/usage-server.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",
