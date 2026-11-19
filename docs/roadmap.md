@@ -4,7 +4,7 @@
 2. Réalisé — Filtre par projet et conversation.
 3. Réalisé — Compteurs explicites : jour, historique, cache, budget fictif.
 4. Réalisé — Synchronisation accessible : connexion, date, erreurs, actualisation.
-5. À faire — Démarrage application et pont en une commande, ports stables.
+5. Réalisé — Démarrage application et pont en une commande, ports stables.
 6. À faire — Transitions progressives entre les quatre stades.
 7. À faire — Dégradation locale des bâtiments, arbres et parcelles.
 8. À faire — Animations d'actions, de combat et transitions plus complètes.
