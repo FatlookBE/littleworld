@@ -10,156 +10,78 @@ const hash = (n: number) => {
   return x - Math.floor(x);
 };
 
-let fauna: HTMLImageElement | undefined;
-function paintFauna(
+const faunaColumns = 3;
+const faunaRows = 2;
+const jellyfishFrames = [0, 1, 2, 3, 4, 5];
+const whaleFrames = [0, 1, 2, 3, 4, 5, 2, 1];
+
+let fauna: { jellyfish: HTMLImageElement; whale: HTMLImageElement } | undefined;
+
+function loadFauna() {
+  const jellyfish = new Image();
+  const whale = new Image();
+  loadPaintedImage(jellyfish, "/assets/void-jellyfish.webp");
+  loadPaintedImage(whale, "/assets/void-whale.webp");
+  return { jellyfish, whale };
+}
+
+function drawFaunaFrame(
   c: CanvasRenderingContext2D,
-  cell: number,
+  sheet: HTMLImageElement,
+  frame: number,
   x: number,
   y: number,
   width: number,
-  height: number,
-  time: number,
 ) {
-  if (!fauna) {
-    fauna = new Image();
-    loadPaintedImage(fauna, "/assets/void-fauna.png");
-  }
-  if (!fauna.complete || !fauna.naturalWidth) return false;
-  const half = fauna.width / 2;
-  // Bend the tentacles and tail while keeping the bell and head steady.
-  const bands = 16;
-  for (let i = 0; i < bands; i++) {
-    const u = i / bands;
-    if (cell === 0) {
-      const bend =
-        Math.max(0, u - 0.35) * Math.sin(time * 2 - u * 4) * width * 0.1;
-      c.drawImage(
-        fauna,
-        0,
-        u * fauna.height,
-        half,
-        fauna.height / bands,
-        x + bend,
-        y + u * height,
-        width,
-        height / bands + 0.35,
-      );
-    } else {
-      const beat = Math.max(0, 0.5 - u) * Math.sin(time * 4) * height * 0.2;
-      c.drawImage(
-        fauna,
-        half * (1 + u),
-        0,
-        half / bands,
-        fauna.height,
-        x + u * width,
-        y + beat,
-        width / bands + 0.35,
-        height,
-      );
-    }
-  }
-  return true;
+  if (!sheet.complete || !sheet.naturalWidth) return;
+  const cellWidth = sheet.naturalWidth / faunaColumns;
+  const cellHeight = sheet.naturalHeight / faunaRows;
+  c.drawImage(
+    sheet,
+    (frame % faunaColumns) * cellWidth,
+    Math.floor(frame / faunaColumns) * cellHeight,
+    cellWidth,
+    cellHeight,
+    x,
+    y,
+    width,
+    (width * cellHeight) / cellWidth,
+  );
 }
 
 function jellyfish(
   c: CanvasRenderingContext2D,
+  sheet: HTMLImageElement,
   x: number,
   y: number,
   r: number,
-  t: number,
+  phase: number,
   hue: number,
 ) {
-  const pulse = 1 + Math.sin(t * 2.2) * 0.12;
-  const glow = c.createRadialGradient(x, y, 0, x, y, r * 3);
-  glow.addColorStop(0, `hsla(${hue},80%,65%,0.28)`);
-  glow.addColorStop(1, `hsla(${hue},80%,65%,0)`);
+  if (!sheet.complete || !sheet.naturalWidth) return;
+  const glow = c.createRadialGradient(x, y, 0, x, y, r * 2.6);
+  glow.addColorStop(0, `hsla(${hue},75%,66%,0.18)`);
+  glow.addColorStop(1, `hsla(${hue},75%,66%,0)`);
   c.fillStyle = glow;
-  c.fillRect(x - r * 3, y - r * 3, r * 6, r * 6);
-  if (paintFauna(c, 0, x - r * 1.5, y - r, 3 * r, 3.8 * r * pulse, t)) return;
-  c.strokeStyle = `hsla(${hue},70%,75%,0.45)`;
-  c.lineWidth = Math.max(1, r * 0.08);
-  for (let i = -2; i <= 2; i++) {
-    c.beginPath();
-    for (let k = 0; k <= 8; k++) {
-      const yy = y + (k / 8) * r * 2.2;
-      const xx =
-        x + i * r * 0.32 + Math.sin(t * 2 + k * 0.7 + i) * r * 0.14 * (k / 8);
-      if (k === 0) c.moveTo(xx, yy);
-      else c.lineTo(xx, yy);
-    }
-    c.stroke();
-  }
-  c.fillStyle = `hsla(${hue},75%,72%,0.55)`;
-  c.beginPath();
-  c.ellipse(x, y, r, r * 0.7 * pulse, 0, Math.PI, 0);
-  c.fill();
-  c.fillStyle = `hsla(${hue},90%,88%,0.5)`;
-  c.beginPath();
-  c.ellipse(
-    x - r * 0.25,
-    y - r * 0.2,
-    r * 0.25,
-    r * 0.12,
-    -0.4,
-    0,
-    Math.PI * 2,
-  );
-  c.fill();
+  c.fillRect(x - r * 2.6, y - r * 2.6, r * 5.2, r * 5.2);
+  const frame = jellyfishFrames[Math.floor(phase) % jellyfishFrames.length];
+  drawFaunaFrame(c, sheet, frame, x - r * 1.25, y - r * 0.8, r * 2.5);
 }
 
 function whale(
   c: CanvasRenderingContext2D,
+  sheet: HTMLImageElement,
   x: number,
   y: number,
-  s: number,
-  t: number,
+  width: number,
+  time: number,
   dir: 1 | -1,
 ) {
   c.save();
-  c.translate(x, y + Math.sin(t * 1.4) * 5 * s);
+  c.translate(x, y + Math.sin(time * 1.4) * width * 0.04);
   c.scale(dir, 1);
-  c.rotate(Math.sin(t * 1.4 + 1) * 0.05);
-  if (!paintFauna(c, 1, -42 * s, -28 * s, 84 * s, 56 * s, t)) {
-    c.fillStyle = "#3d5a6e";
-    c.beginPath();
-    c.ellipse(0, 0, 26 * s, 11 * s, 0, 0, Math.PI * 2);
-    c.fill();
-    c.fillStyle = "#6c8fa5";
-    c.beginPath();
-    c.ellipse(2 * s, 4 * s, 20 * s, 5 * s, 0, 0, Math.PI);
-    c.fill();
-    // Tail, flapping.
-    c.save();
-    c.translate(-24 * s, 0);
-    c.rotate(Math.sin(t * 4) * 0.35);
-    c.fillStyle = "#3d5a6e";
-    c.beginPath();
-    c.moveTo(0, 0);
-    c.quadraticCurveTo(-9 * s, -4 * s, -14 * s, -11 * s);
-    c.quadraticCurveTo(-10 * s, 0, -14 * s, 11 * s);
-    c.quadraticCurveTo(-9 * s, 4 * s, 0, 0);
-    c.fill();
-    c.restore();
-    c.fillStyle = "#101820";
-    c.beginPath();
-    c.arc(14 * s, -2 * s, 1.5 * s, 0, Math.PI * 2);
-    c.fill();
-  }
-  // Spout of little droplets.
-  c.fillStyle = "#cfe8f288";
-  for (let i = 0; i < 6; i++) {
-    const k = (t * 1.2 + i / 6) % 1;
-    c.beginPath();
-    c.arc(
-      10 * s + Math.sin(i * 2.1) * 6 * s * k,
-      -10 * s - k * 24 * s,
-      (1.8 - k) * s + 0.4,
-      0,
-      Math.PI * 2,
-    );
-    c.fill();
-  }
+  const frame = whaleFrames[Math.floor(time * 7) % whaleFrames.length];
+  drawFaunaFrame(c, sheet, frame, -width / 2, -width * 0.3, width);
   c.restore();
 }
 
@@ -172,6 +94,7 @@ export function drawCritters(
   cy: number,
   scale: number,
 ) {
+  fauna ??= loadFauna();
   // Jellyfish drifting in slow ellipses around the lower half of the turtle.
   for (let i = 0; i < 6; i++) {
     const a = time * (0.1 + hash(i) * 0.07) + i * 1.9,
@@ -180,10 +103,11 @@ export function drawCritters(
     const y = cy + (300 + hash(i + 3) * 700 + Math.sin(a * 1.3) * 50) * scale;
     jellyfish(
       c,
+      fauna.jellyfish,
       x,
       y,
       (22 + hash(i + 5) * 16) * scale,
-      time + i * 3,
+      time * (5 + hash(i + 14)) + i,
       170 + i * 38,
     );
   }
@@ -192,13 +116,16 @@ export function drawCritters(
     k = (time % cycle) / 16;
   if (k < 1) {
     const dir = Math.floor(time / cycle) % 2 ? -1 : 1;
-    const x =
-      dir === 1 ? -60 + k * (width + 120) : width + 60 - k * (width + 120);
+    const whaleWidth = 138 * scale;
+    const margin = whaleWidth / 2;
+    const distance = k * (width + 2 * margin);
+    const x = dir === 1 ? distance - margin : width + margin - distance;
     whale(
       c,
+      fauna.whale,
       x,
       cy + (380 + hash(Math.floor(time / cycle)) * 160) * scale,
-      scale * 0.9,
+      whaleWidth,
       time,
       dir,
     );

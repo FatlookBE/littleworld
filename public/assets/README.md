@@ -61,7 +61,7 @@ Le chargement recale chaque couronne et largeur de carapace sur les mêmes appui
 
 `residents-gather.png`, `residents-work.png`, `residents-drink.png`, `residents-eat.png` : quatre planches transparentes 1536 × 1024, six poses × quatre identités, générées avec l’outil intégré `image_gen` d’après `residents-hit.png`. Prompts complets et règles de lecture : `docs/resident-action-assets.md`. Six poses/séquence, cinq poses/seconde simulée, déclenchement à destination, priorité marche/combat/coups et ressources vérifiées.
 
-Les planches `elephant-decayed.png` et `turtle-decayed.png` ont été générées avec ImageGen à partir des cycles de poses des porteurs. La planche `void-fauna.png` contient une méduse à bois et une baleine cosmique, générées dans le même style peint.
+Les planches `elephant-decayed.png` et `turtle-decayed.png` ont été générées avec ImageGen à partir des cycles de poses des porteurs.
 
 Les planches générées avec ImageGen `wraith-cycle.png` (4 × 2, vol en boucle) et `wolf-cycle.png` (4 × 4, course puis morsure) utilisent des cellules transparentes. Le spectre porte une cape gris-vert en lambeaux et une agrafe ocre. Le loup au pelage gris est peint de trois quarts, avec la même lumière chaude venant du haut à gauche.
 
@@ -86,3 +86,12 @@ Comparaison : `output/playwright/ruined-turtle-hd-comparison.png`. Cycle : `outp
 ## Couche terrestre assortie
 
 `world-slab-{withered,ruined,horror}.png` et `terrain-{withered,ruined,horror}.png` : six variantes peintes générées avec l'outil intégré `image_gen`, pour les falaises et les matériaux de surface. Références et prompts : `docs/earth-decay-assets.md`.
+
+
+## Faune cosmique — 19 novembre 2026
+
+`void-jellyfish.webp` et `void-whale.webp` sont deux planches WebP transparentes générées avec l’outil intégré ImageGen. Chacune contient six poses dans une grille de trois colonnes sur deux lignes. Les cellules mesurent respectivement 128 × 173 et 256 × 152 pixels.
+
+Consignes de génération communes : « exactly six consecutive poses, one 3 × 2 grid, identical camera and anchor, finely painted dark fantasy RPG textures, transparent alpha, no scenery or text ». Méduse : « translucent turquoise bell with trailing luminous tendrils; contract the bell then expand it, allowing the tentacles to follow in a wave ». Baleine : « right-facing cosmic humpback, indigo skin with star flecks; raise and lower the tail smoothly while the head stays anchored and the flippers rock ».
+
+Les six méduses ont des phases et des cadences décalées. La baleine relit des poses intermédiaires pour revenir de la queue basse à la queue haute, et inverse son orientation à chaque traversée.
