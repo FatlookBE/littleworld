@@ -167,6 +167,23 @@ export function restore(text: string): World {
           v.health !== 0 ||
           v.route.length !== 0
         : v.diedAt !== undefined) ||
+      (v.actionAt !== undefined && !finite(v.actionAt, 0, w.tick)) ||
+      (v.walkWait !== undefined &&
+        (!Number.isInteger(v.walkWait) || !finite(v.walkWait, 0, 1000))) ||
+      (v.visitAfter !== undefined && !finite(v.visitAfter, 0, 1e12)) ||
+      (v.visit !== undefined &&
+        (!v.visit ||
+          v.dead ||
+          !Number.isInteger(v.visit.building) ||
+          v.visit.building !== v.home ||
+          !w.buildings.some(
+            (b) => b.id === v.visit!.building && b.type === "home",
+          ) ||
+          !["approaching", "entering", "inside", "exiting"].includes(
+            v.visit.phase,
+          ) ||
+          !finite(v.visit.since, 0, w.tick) ||
+          !finite(v.visit.until, v.visit.since, 1e12))) ||
       (v.nextDecision !== undefined && !finite(v.nextDecision, 0, 1e12)) ||
       !finite(v.cooldown, 0, 1e12) ||
       !Array.isArray(v.ties) ||
@@ -184,6 +201,13 @@ export function restore(text: string): World {
       !v.memories.every(memory)
     )
       throw Error("Habitants invalides.");
+  const occupiedDoors = new Set<number>();
+  for (const v of w.villagers) {
+    if (!v.visit || v.visit.phase === "inside") continue;
+    if (occupiedDoors.has(v.visit.building))
+      throw Error("Passages de porte concurrents dans la sauvegarde.");
+    occupiedDoors.add(v.visit.building);
+  }
   for (const [i, b] of w.buildings.entries())
     if (
       b.id !== i ||

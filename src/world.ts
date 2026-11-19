@@ -1,3 +1,4 @@
+import { drawHouseDoor } from "./house-door";
 import { treePosition } from "./core/local-environment";
 import { drawCritters } from "./critters";
 import { bridgeRows, riverCenter, riverHalfWidth } from "./core/navigation";
@@ -335,6 +336,22 @@ export class WorldRenderer {
         (home ? 93 : 112) * this.scale,
       );
       this.ctx.restore();
+      if (home) {
+        const doorHit = drawHouseDoor(
+          this.ctx,
+          w,
+          b,
+          atlas,
+          frame,
+          this.atlas,
+          sx,
+          sy + 17 * this.scale,
+          93 * this.scale,
+          w.settings.reducedMotion ? w.tick : this.time / 0.2,
+          this.scale,
+        );
+        if (doorHit) this.hits.push({ ...doorHit, kind: "person" });
+      }
       const spriteWidth = (home ? 93 : 112) * this.scale;
       const spriteHeight =
         (spriteWidth * atlas.frames[frame].h) / atlas.frames[frame].w;
@@ -1237,11 +1254,13 @@ export class WorldRenderer {
           ),
       });
     }
-    for (const v of w.villagers)
+    for (const v of w.villagers) {
+      if (!v.dead && v.visit && v.visit.phase !== "approaching") continue;
       objects.push({
         depth: v.x + v.y,
         draw: () => this.person(v, w, selected),
       });
+    }
     objects.sort((a, b) => a.depth - b.depth).forEach((o) => o.draw());
     const farm = this.project(8, 21);
     this.hits.push({ x: farm[0], y: farm[1], id: 9, kind: "building" });
@@ -1659,7 +1678,7 @@ export class WorldRenderer {
       }
     }
     for (const v of w.villagers) {
-      if (v.dead) continue;
+      if (v.dead || (v.visit && v.visit.phase !== "approaching")) continue;
       const [x, y] = this.project(v.x, v.y);
       if (v.morale < 25) {
         c.fillStyle = "#decda4";

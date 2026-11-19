@@ -214,3 +214,9 @@ Point 6 : bandes progressives autour des trois seuils, avec zones irrégulières
 Point 7 : santé et brûlure persistantes par arbre et zone de sol ; exposition géographique fixe, eau/ruisseau et sécheresse, effets locaux des feux et maladies, récupération lente. Les conditions des bâtiments varient avec l’exposition et l’entretien des occupants. Les dessins morts/endommagés et les matériaux peints existants sont réutilisés. Anciennes sauvegardes compatibles, nouvelles valeurs bornées et validées.
 
 117 tests / 27 fichiers, build et lint réussis. Revue indépendante : **9/10** sur code/comportement testé. Contrôle principal en démo nocturne effectué, précision visuelle limitée ; pas de validation visuelle indépendante. Documentation : `docs/local-degradation.md`.
+
+### Activités, visites et déplacements des habitants — 19 novembre 2026
+
+Points 8 à 11 : nouveaux cycles de combat, pain, soins et portage pour les quatre identités, y compris leurs variantes faméliques. Passages de porte, repos intérieur, évacuation et restauration testés. Les 24 habitants entrent et ressortent dans la simulation de contrôle. Détours autour des voisins arrêtés et préemption pour la faim urgente. Le bouton « Comprendre » montre les mécanismes en jeu et les fiches donnent des explications propres à la personne ou au lieu.
+
+140 tests, build et lint réussis. Revue indépendante 9/10 pour chacun des quatre points. Transparence contrôlée sur les huit planches. Le panneau a été ouvert dans le navigateur et les passages observés aux différents âges du cycle pour une maison intacte et une maison abîmée. La fluidité des huit nouveaux cycles n’a pas été contrôlée indépendamment dans le navigateur.

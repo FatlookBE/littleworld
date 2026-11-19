@@ -30,6 +30,10 @@ export interface Villager {
   target: [number, number];
   route: [number, number][];
   action: string;
+  actionAt?: number;
+  visit?: import("./home-visits").HomeVisit;
+  visitAfter?: number;
+  walkWait?: number;
   hunger: number;
   malnutrition?: number;
   thirst: number;

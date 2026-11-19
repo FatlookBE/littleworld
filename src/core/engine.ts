@@ -1,3 +1,10 @@
+import {
+  doorStep,
+  cancelVisit,
+  indoors,
+  tryHomeVisit,
+  updateHomeVisit,
+} from "./home-visits";
 import { updateLocalEnvironment, buildingWear } from "./local-environment";
 import { updateNutrition } from "./nutrition";
 import { spreadDestination, moveResident } from "./crowd";
@@ -42,6 +49,7 @@ export function stage(w: World) {
 export const residents = (w: World) => w.villagers.filter((v) => !v.dead);
 function die(w: World, v: Villager) {
   if (v.dead) return;
+  if (v.visit) cancelVisit(w, v);
   v.dead = true;
   v.diedAt = w.tick;
   v.health = 0;
@@ -259,9 +267,15 @@ function destination(w: World, v: Villager) {
       w.food < 20
         ? "Cherche quelque chose à manger"
         : "Prend un repas avec ses provisions";
-  } else if (v.energy < 25 || hour < 6 || hour > 21) {
+  } else if (
+    v.energy < 25 ||
+    hour < 6 ||
+    hour > 21 ||
+    (w.tick >= (v.visitAfter ?? 0) &&
+      (Math.floor(w.tick / 12) + v.id) % 19 === 0)
+  ) {
     const h = w.buildings[v.home];
-    target = [h.x + 0.5, h.y + 2.5];
+    target = doorStep(h);
     action = "Se repose à la maison";
   } else {
     const job = v.id % 8;
@@ -313,17 +327,18 @@ function destination(w: World, v: Villager) {
     }
   }
   v.action = action;
+  v.actionAt = w.tick;
   v.route = findRoute(w, [v.x, v.y], spreadDestination(w, v, target));
   v.target = v.route.at(-1) ?? [v.x, v.y];
   v.nextDecision = w.tick + 40;
 }
 function social(w: World, v: Villager) {
-  if (v.ties.length === 0) return;
+  if (v.ties.length === 0 || v.visit) return;
   if (v.cooldown > w.tick || random(w) > 0.012 * w.settings.eventFrequency)
     return;
   const tie = v.ties[Math.floor(random(w) * v.ties.length)],
     other = w.villagers[tie.id];
-  if (other.dead) return;
+  if (other.dead || other.visit) return;
   const near = Math.hypot(v.x - other.x, v.y - other.y) < 3;
   if (!near) return;
   if (w.water < 40 && other.thirst > 50 && tie.bond > 40 && v.thirst < 65) {
@@ -489,22 +504,34 @@ export function step(w: World) {
       die(w, v);
       continue;
     }
+    v.actionAt ??= w.tick;
     v.thirst = clamp(v.thirst + 0.12 + p * 0.16);
     v.hunger = clamp(v.hunger + 0.09 + p * 0.08);
     v.energy = clamp(v.energy - 0.04);
-    if (
-      (!v.route.length && w.tick >= (v.nextDecision ?? 0)) ||
-      (v.thirst > 60 &&
-        !v.action.includes("puits") &&
-        !v.action.includes("point d’eau") &&
-        w.tick >= (v.nextDecision ?? 0))
-    )
-      destination(w, v);
-    const wasTravelling = v.route.length > 0;
-    moveResident(w, v, 0.11 * (0.6 + v.energy / 250));
-    if (wasTravelling && v.route.length === 0) {
-      // Give work and needs a real stop after arrival, even after a long trip.
-      v.nextDecision = Math.max(v.nextDecision ?? 0, w.tick + 24 + (v.id % 12));
+    const visiting = updateHomeVisit(w, v);
+    if (!visiting) {
+      if (
+        (!v.route.length && w.tick >= (v.nextDecision ?? 0)) ||
+        (v.thirst > 60 &&
+          !v.action.includes("puits") &&
+          !v.action.includes("point d’eau") &&
+          w.tick >= (v.nextDecision ?? 0)) ||
+        (v.hunger > 75 &&
+          !/repas|manger/.test(v.action) &&
+          w.tick >= (v.nextDecision ?? 0))
+      )
+        destination(w, v);
+      const wasTravelling = v.route.length > 0;
+      moveResident(w, v, 0.11 * (0.6 + v.energy / 250));
+      if (wasTravelling && v.route.length === 0) {
+        v.actionAt = w.tick;
+        // Give work and needs a real stop after arrival, even after a long trip.
+        v.nextDecision = Math.max(
+          v.nextDecision ?? 0,
+          w.tick + 24 + (v.id % 12),
+        );
+      }
+      tryHomeVisit(w, v);
     }
     const arrived = Math.hypot(v.x - v.target[0], v.y - v.target[1]) < 0.3;
     if (arrived) {
@@ -522,7 +549,8 @@ export function step(w: World) {
         v.hunger = clamp(v.hunger - 2);
         w.food = clamp(w.food - 0.015);
       }
-      if (v.action.includes("repose")) v.energy = clamp(v.energy + 1);
+      if (v.action.includes("repose"))
+        v.energy = clamp(v.energy + (indoors(v) ? 1.3 : 1));
     }
     updateNutrition(v);
     v.morale = clamp(
