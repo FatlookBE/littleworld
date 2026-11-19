@@ -30,6 +30,11 @@ export interface Villager {
   target: [number, number];
   route: [number, number][];
   action: string;
+  actionAt?: number;
+  visit?: import("./home-visits").HomeVisit;
+  visitAfter?: number;
+  walkWait?: number;
+  repairTarget?: number;
   hunger: number;
   malnutrition?: number;
   thirst: number;
@@ -73,6 +78,7 @@ export interface Settings {
   usageSession?: string;
 }
 export interface World {
+  localEnvironment?: import("./local-environment").LocalEnvironment;
   disasters?: import("./apocalypse").Disaster[];
   version: 1;
   seed: number;

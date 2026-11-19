@@ -1600,3 +1600,59 @@ body {
   font-size: 9px;
   letter-spacing: 0;
 }
+
+/* Current causes sit beside the corresponding state, in the village folio. */
+.pressure-explain {
+  text-align: left;
+  border-radius: 0;
+  padding-block: 4px;
+  min-height: 44px;
+}
+.pressure-explain .pressure-track { display: block; }
+.pressure-explain > small {
+  display: block;
+  margin-top: 8px;
+  color: #dfcfa9;
+  font-size: 10px;
+  letter-spacing: 0;
+}
+.cause-explanation ul {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.cause-explanation li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.cause-explanation li:last-child { border-bottom: 0; }
+.cause-explanation li strong {
+  display: block;
+  color: #e4d6b9;
+  font-size: 13px;
+  font-weight: 500;
+}
+.cause-explanation li p {
+  margin: 7px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.village-audio-settings {
+  min-width: 0;
+  margin: 0 0 20px;
+  padding: 8px 12px 0;
+  border: 1px solid var(--line);
+}
+.village-audio-settings legend {
+  padding-inline: 5px;
+  color: #e6d6af;
+}
+.village-audio-settings .check {
+  min-height: 44px;
+}
+.village-audio-settings input[type="range"] {
+  min-height: 32px;
+  width: 100%;
+  accent-color: #d1b77d;
+}

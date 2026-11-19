@@ -55,10 +55,20 @@ function nearest(w: World, p: Point): Point {
       }
   return best;
 }
-export function findRoute(w: World, from: Point, to: Point): Point[] {
+export function findRoute(
+  w: World,
+  from: Point,
+  to: Point,
+  occupied: Point[] = [],
+): Point[] {
   const start = nearest(w, from),
     end = nearest(w, to),
     key = (p: Point) => p[1] * 29 + p[0];
+  const blocked = new Set(
+    occupied.map(([x, y]) => Math.floor(y) * 29 + Math.floor(x)),
+  );
+  blocked.delete(key(start));
+  blocked.delete(key(end));
   const queue: Point[] = [start],
     parents = new Map<number, number>([[key(start), -1]]);
   for (let i = 0; i < queue.length && !parents.has(key(end)); i++) {
@@ -70,7 +80,7 @@ export function findRoute(w: World, from: Point, to: Point): Point[] {
       [x, y - 1],
     ] as Point[]) {
       const id = key(p);
-      if (!parents.has(id) && walkable(w, ...p)) {
+      if (!parents.has(id) && !blocked.has(id) && walkable(w, ...p)) {
         parents.set(id, key(queue[i]));
         queue.push(p);
       }

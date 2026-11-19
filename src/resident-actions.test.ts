@@ -1,6 +1,6 @@
 import { expect, it } from "vitest";
 import { createWorld } from "./core/engine";
-import { residentAction } from "./resident-actions";
+import { residentAction, residentActionTime } from "./resident-actions";
 
 function scene(action: string) {
   const w = createWorld(0),
@@ -58,4 +58,39 @@ it("keeps an activity stop after a long journey instead of immediately rerouting
   step(w);
   expect(v.action).toBe("Cueille des plantes sauvages");
   expect(residentAction(v, w)).toBe("gather");
+});
+
+it("maps bread, care and water carrying to their distinct gesture sheets", () => {
+  const { w, v } = scene("Pétrit le pain");
+  expect(residentAction(v, w)).toBe("bake");
+  v.action = "Soigne ses voisins";
+  expect(residentAction(v, w)).toBe("care");
+  v.action = "Porte de l’eau à ses voisins";
+  v.route = [[v.x + 1, v.y]];
+  expect(residentAction(v, w)).toBe("carry");
+  w.water = 0;
+  expect(residentAction(v, w)).toBeNull();
+  v.route = [];
+  v.action = "Pétrit le pain";
+  w.food = 0;
+  expect(residentAction(v, w)).toBeNull();
+});
+it("uses elapsed simulation time from arrival rather than a global arbitrary pose", () => {
+  const { v } = scene("Pétrit le pain");
+  v.actionAt = 150;
+  expect(residentActionTime(v, 30)).toBe(0);
+  expect(residentActionTime(v, 30.4)).toBeCloseTo(0.4);
+  expect(residentActionTime(v, 29)).toBe(0);
+});
+it("does not animate work over a doorway passage or an interior visit", () => {
+  const { w, v } = scene("Soigne ses voisins");
+  v.visit = {
+    building: v.home,
+    phase: "inside",
+    since: w.tick,
+    until: w.tick + 20,
+  };
+  expect(residentAction(v, w)).toBeNull();
+  v.visit.phase = "entering";
+  expect(residentAction(v, w)).toBeNull();
 });

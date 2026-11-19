@@ -1,3 +1,4 @@
+import { loadPaintedImage } from "./asset-status";
 /** Playback helpers and fixed-size cells keep animation from resizing between poses. */
 export function loopFrame(
   time: number,
@@ -20,6 +21,7 @@ export class AnimationAtlas {
   columnOffset: number;
   heights: number[] = [];
   private rowCuts?: readonly number[];
+  private pendingPath: string | undefined;
   constructor(
     path: string,
     columns: number,
@@ -28,6 +30,7 @@ export class AnimationAtlas {
     anchorBase = false,
     sameScale = false,
     rowCuts?: readonly number[],
+    loadOnDemand = false,
   ) {
     this.rowCuts = rowCuts;
     this.columnOffset = columnOffset;
@@ -80,7 +83,14 @@ export class AnimationAtlas {
       if (anchorBase || sameScale) this.heights.fill(Math.max(...this.heights));
       this.ready = true;
     };
-    this.image.src = path;
+    this.pendingPath = path;
+    if (!loadOnDemand) this.load();
+  }
+  load() {
+    if (!this.pendingPath) return;
+    const path = this.pendingPath;
+    this.pendingPath = undefined;
+    loadPaintedImage(this.image, path);
   }
   rowEdge(row: number) {
     return (

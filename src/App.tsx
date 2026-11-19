@@ -1,3 +1,12 @@
+import { LocalDiagnostics } from "./LocalDiagnostics";
+import { VillageAudioSettings } from "./VillageAudioSettings";
+import { useVillageAudio } from "./use-village-audio";
+import {
+  villageCauses,
+  personCauses,
+  buildingCauses,
+  type VillageCause,
+} from "./core/village-causes";
 import { readUsageBridge } from "./usage-bridge";
 import { remainsLabel } from "./core/lifecycle";
 import { residentSkin } from "./sprites";
@@ -80,6 +89,27 @@ function Meter({
     </div>
   );
 }
+function CauseList({
+  title,
+  causes,
+}: {
+  title: string;
+  causes: VillageCause[];
+}) {
+  return (
+    <section className="cause-explanation" aria-label={title}>
+      <h3>{title}</h3>
+      <ul>
+        {causes.map((cause) => (
+          <li key={cause.id}>
+            <strong>{cause.title}</strong>
+            <p>{cause.detail}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
 function App() {
   const [view, setView] = useState<World>(() => createWorld());
   const world = useRef<World>(view),
@@ -113,6 +143,7 @@ function App() {
     lastStory = useRef(-1),
     drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const w = view;
+  const villageAudio = useVillageAudio(w, paused || !ready);
   useEffect(() => {
     running.current = { paused, speed };
     selection.current = selected;
@@ -575,14 +606,20 @@ function App() {
             Budget du jeu : {fmt(displayedBudget)}
           </div>
         </div>
-        <div className="pressure-stat">
+        <button
+          className="pressure-stat pressure-explain"
+          onClick={() => toggle("about")}
+          aria-expanded={panel === "about"}
+          aria-label={`Comprendre l’état du village : pression fictive ${Math.round(w.pressure)} %`}
+        >
           <span>
             PRESSION FICTIVE <b>{Math.round(w.pressure)}%</b>
           </span>
-          <div className="pressure-track">
+          <span className="pressure-track" aria-hidden="true">
             <span style={{ width: `${w.pressure}%` }} />
-          </div>
-        </div>
+          </span>
+          <small>Comprendre ↗</small>
+        </button>
         <div className="resource">
           <span className="resource-icon" aria-hidden="true">
             ♙
@@ -732,6 +769,10 @@ function App() {
                   <Meter label="Moral" value={person.morale} />
                 </>
               )}
+              <CauseList
+                title="Ce qui explique son état"
+                causes={personCauses(w, person)}
+              />
               <h3>Les liens qui restent</h3>
               <div className="ties">
                 {person.ties.map((t) => (
@@ -778,6 +819,10 @@ function App() {
                       ? w.fertility
                       : w.food
                 }
+              />
+              <CauseList
+                title="Ce qui agit sur ce lieu"
+                causes={buildingCauses(w, building)}
               />
               <h3>
                 {building.type === "home" ? "Ceux qui y vivent" : "À proximité"}
@@ -874,11 +919,11 @@ function App() {
           )}
           {panel === "about" && (
             <>
-              <h2>
-                Chaque nombre
-                <br />
-                laisse une trace.
-              </h2>
+              <h2>Comprendre le village</h2>
+              <CauseList
+                title="Ce qui se passe maintenant"
+                causes={villageCauses(w)}
+              />
               <p>
                 Tokenfall est une fiction environnementale. Les tokens font
                 évoluer un petit monde selon un budget et des seuils que vous
@@ -924,6 +969,7 @@ function App() {
           {panel === "settings" && (
             <>
               <h2>Prendre le temps.</h2>
+              <VillageAudioSettings {...villageAudio} />
               <label className="field">
                 Scénario
                 <select
@@ -1412,6 +1458,11 @@ function App() {
               >
                 Exporter les métadonnées <span>↓</span>
               </button>
+              <LocalDiagnostics
+                world={w}
+                saveStatus={saveStatus}
+                syncError={sync.error}
+              />
               <h3>Confidentialité & conservation</h3>
               <p className="fine-print">
                 Tout reste dans IndexedDB sur cet appareil. Aucun serveur,

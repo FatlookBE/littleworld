@@ -1,5 +1,6 @@
+import { loadPaintedImage } from "./asset-status";
 import { nutritionStage } from "./core/nutrition";
-import { residentAction } from "./resident-actions";
+import { residentAction, residentActionTime } from "./resident-actions";
 import { AnimationAtlas, loopFrame } from "./animation";
 import type { Villager, World } from "./core/types";
 // Source pixels in the user's original 1536×1024 atlas. Anchors are foot positions,
@@ -112,9 +113,15 @@ export const residentSkin = (id: number) =>
   [2, 3, 1, 0, 1, 0, 3, 2, 3, 0, 1, 2, 1, 0, 3, 0, 1, 0, 1, 0, 1, 2, 3, 2][
     id
   ] ?? 0;
+const detailedActivityAtlas = (path: string) =>
+  new AnimationAtlas(path, 6, 4, 0, true, true, undefined, true);
+
 export class ResidentAtlas {
   image: HTMLImageElement;
   activities = {
+    bake: detailedActivityAtlas("/assets/residents-bake.png"),
+    care: detailedActivityAtlas("/assets/residents-care.png"),
+    carry: detailedActivityAtlas("/assets/residents-carry.png"),
     gather: new AnimationAtlas(
       "/assets/residents-gather.png",
       6,
@@ -150,6 +157,9 @@ export class ResidentAtlas {
     true,
   );
   gauntActivities = {
+    bake: detailedActivityAtlas("/assets/residents-gaunt-bake.png"),
+    care: detailedActivityAtlas("/assets/residents-gaunt-care.png"),
+    carry: detailedActivityAtlas("/assets/residents-gaunt-carry.png"),
     gather: new AnimationAtlas(
       "/assets/residents-gaunt-gather.png",
       6,
@@ -193,6 +203,10 @@ export class ResidentAtlas {
     true,
     [0, 265, 537, 793, 1024],
   );
+  fightCycle = detailedActivityAtlas("/assets/residents-fight-cycle.png");
+  gauntFightCycle = detailedActivityAtlas(
+    "/assets/residents-gaunt-fight-cycle.png",
+  );
   reactions = new AnimationAtlas("/assets/residents-hit.png", 4, 4);
   variants = new Image();
   walks = new AnimationAtlas("/assets/residents-walk.png", 8, 3, 24);
@@ -208,7 +222,7 @@ export class ResidentAtlas {
     this.image.onerror = () => {
       this.failed = true;
     };
-    this.image.src = "/assets/residents-atlas.png";
+    loadPaintedImage(this.image, "/assets/residents-atlas.png");
     this.variants.onload = () => {
       const image = this.variants,
         c = document.createElement("canvas");
@@ -252,7 +266,7 @@ export class ResidentAtlas {
       }
       this.variantsReady = true;
     };
-    this.variants.src = "/assets/residents-variants.png";
+    loadPaintedImage(this.variants, "/assets/residents-variants.png");
   }
   draw(
     ctx: CanvasRenderingContext2D,
@@ -299,26 +313,57 @@ export class ResidentAtlas {
       );
     }
     const activity = residentAction(v, w);
-    const activityAtlas =
-      activity && gaunt && this.gauntActivities[activity].ready
+    const activityAtlas = activity
+      ? gaunt
         ? this.gauntActivities[activity]
-        : activity
-          ? this.activities[activity]
-          : null;
+        : this.activities[activity]
+      : null;
+    activityAtlas?.load();
     if (activityAtlas?.ready) {
+      const moving = v.route.length > 0;
+      const target = v.route[0] ?? v.target;
+      const phase =
+        activity === "carry" && !moving
+          ? 0
+          : loopFrame(
+              residentActionTime(v, time),
+              6,
+              activity === "carry" ? 7 : 5,
+              0,
+              w.settings.reducedMotion,
+            );
+      const authoredFeet =
+        activity === "bake" || activity === "care" || activity === "carry";
       return activityAtlas.draw(
         ctx,
-        skin * 6 + loopFrame(time, 6, 5, v.id * 1.37, w.settings.reducedMotion),
+        skin * 6 + phase,
         x,
         y,
-        56 * scale,
-        v.id % 2 === 1,
-        0.93,
+        (activity === "care" ? 43 : 56) * scale,
+        moving ? target[0] - v.x - (target[1] - v.y) < 0 : v.id % 2 === 1,
+        authoredFeet ? undefined : 0.93,
       );
     }
     const fighting = w.disasters?.some(
       (e) => e.kind === "fight" && e.people.includes(v.id),
     );
+    const fightCycle = gaunt ? this.gauntFightCycle : this.fightCycle;
+    if (fighting) fightCycle.load();
+    if (fighting && fightCycle.ready) {
+      const otherId = w.disasters
+        ?.find((e) => e.kind === "fight" && e.people.includes(v.id))
+        ?.people.find((id) => id !== v.id);
+      const other = w.villagers.find((person) => person.id === otherId);
+      return fightCycle.draw(
+        ctx,
+        skin * 6 +
+          loopFrame(time, 6, 5, (v.id % 2) * 3, w.settings.reducedMotion),
+        x,
+        y,
+        56 * scale,
+        other ? other.x - v.x - (other.y - v.y) < 0 : v.id % 2 === 1,
+      );
+    }
     if (gaunt && fighting && this.gauntReactions.ready) {
       return this.gauntReactions.draw(
         ctx,

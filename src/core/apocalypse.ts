@@ -1,3 +1,4 @@
+import { indoors } from "./home-visits";
 import { findRoute } from "./navigation";
 import type { World } from "./types";
 import { isWet, season, seasonEffects } from "./seasons";
@@ -25,7 +26,7 @@ export function apocalypse(
   remember: (text: string, person?: number, kind?: "hope" | "warning") => void,
 ) {
   const events = disasters(w),
-    alive = w.villagers.filter((v) => !v.dead),
+    alive = w.villagers.filter((v) => !v.dead && !indoors(v)),
     sparks: Disaster[] = [];
   for (const e of events) {
     e.life--;
@@ -39,7 +40,7 @@ export function apocalypse(
         continue;
       }
       const participants = e.people.map((id) => w.villagers[id]);
-      if (participants.some((v) => !v || v.dead)) {
+      if (participants.some((v) => !v || v.dead || indoors(v))) {
         e.life = 0;
         continue;
       }

@@ -1,3 +1,4 @@
+import { loadPaintedImage } from "./asset-status";
 /** Painted environment assets. Bounds are measured once, never during a frame. */
 type Frame = { x: number; y: number; w: number; h: number };
 export class EnvironmentAtlas {
@@ -40,7 +41,7 @@ export class EnvironmentAtlas {
       }
       this.ready = true;
     };
-    this.image.src = path;
+    loadPaintedImage(this.image, path);
   }
   draw(
     ctx: CanvasRenderingContext2D,

@@ -1,3 +1,16 @@
+import {
+  canRebuild,
+  reconstructionJob,
+  repairAtDestination,
+} from "./reconstruction";
+import {
+  doorStep,
+  cancelVisit,
+  indoors,
+  tryHomeVisit,
+  updateHomeVisit,
+} from "./home-visits";
+import { updateLocalEnvironment, buildingWear } from "./local-environment";
 import { updateNutrition } from "./nutrition";
 import { spreadDestination, moveResident } from "./crowd";
 import { apocalypse } from "./apocalypse";
@@ -41,6 +54,8 @@ export function stage(w: World) {
 export const residents = (w: World) => w.villagers.filter((v) => !v.dead);
 function die(w: World, v: Villager) {
   if (v.dead) return;
+  if (v.visit) cancelVisit(w, v);
+  delete v.repairTarget;
   v.dead = true;
   v.diedAt = w.tick;
   v.health = 0;
@@ -229,6 +244,7 @@ export function createWorld(now = Date.now(), seed = 9137): World {
 }
 function destination(w: World, v: Villager) {
   const hour = (w.tick / 12 + 8) % 24;
+  delete v.repairTarget;
   let target: [number, number], action: string;
   if (v.thirst > 45) {
     // The riverside pools are only worth the walk while the river still runs.
@@ -258,11 +274,37 @@ function destination(w: World, v: Villager) {
       w.food < 20
         ? "Cherche quelque chose à manger"
         : "Prend un repas avec ses provisions";
-  } else if (v.energy < 25 || hour < 6 || hour > 21) {
+  } else if (
+    v.energy < 25 ||
+    hour < 6 ||
+    hour > 21 ||
+    (w.tick >= (v.visitAfter ?? 0) &&
+      (Math.floor(w.tick / 12) + v.id) % 19 === 0)
+  ) {
     const h = w.buildings[v.home];
-    target = [h.x + 0.5, h.y + 2.5];
+    target = doorStep(h);
     action = "Se repose à la maison";
   } else {
+    const repair = reconstructionJob(w, v);
+    const repairRoute = repair && findRoute(w, [v.x, v.y], repair.target);
+    const repairStop = repairRoute && repairRoute.at(-1);
+    if (
+      repair &&
+      repairRoute &&
+      repairStop &&
+      Math.hypot(
+        repairStop[0] - repair.target[0],
+        repairStop[1] - repair.target[1],
+      ) < 0.1
+    ) {
+      v.repairTarget = repair.b.id;
+      v.action = `Reconstruit ${repair.b.name}`;
+      v.actionAt = w.tick;
+      v.route = repairRoute;
+      v.target = repairStop;
+      v.nextDecision = w.tick + 40;
+      return;
+    }
     const job = v.id % 8;
     const spots: [number, number][] = [
       [7 + (v.id % 3), 20],
@@ -312,17 +354,18 @@ function destination(w: World, v: Villager) {
     }
   }
   v.action = action;
+  v.actionAt = w.tick;
   v.route = findRoute(w, [v.x, v.y], spreadDestination(w, v, target));
   v.target = v.route.at(-1) ?? [v.x, v.y];
   v.nextDecision = w.tick + 40;
 }
 function social(w: World, v: Villager) {
-  if (v.ties.length === 0) return;
+  if (v.ties.length === 0 || v.visit) return;
   if (v.cooldown > w.tick || random(w) > 0.012 * w.settings.eventFrequency)
     return;
   const tie = v.ties[Math.floor(random(w) * v.ties.length)],
     other = w.villagers[tie.id];
-  if (other.dead) return;
+  if (other.dead || other.visit) return;
   const near = Math.hypot(v.x - other.x, v.y - other.y) < 3;
   if (!near) return;
   if (w.water < 40 && other.thirst > 50 && tie.bond > 40 && v.thirst < 65) {
@@ -476,36 +519,78 @@ export function step(w: World) {
         (100 - w.food) * 0.0007 -
         (0.06 * w.cooperation) / 100),
   );
-  for (const b of w.buildings)
+  updateLocalEnvironment(w);
+  for (const b of w.buildings) {
+    const wear = buildingWear(w, b);
     b.condition = clamp(
-      b.condition -
-        Math.max(0, p - 0.2) * 0.16 * (0.85 + (b.id % 5) * 0.08) +
-        (p < 0.2 ? 0.006 : 0),
+      b.condition - Math.max(0, p - 0.2) * 0.16 * wear.exposure + wear.repair,
     );
+  }
   for (const v of alive) {
     if (v.health <= 0) {
       die(w, v);
       continue;
     }
+    v.actionAt ??= w.tick;
     v.thirst = clamp(v.thirst + 0.12 + p * 0.16);
     v.hunger = clamp(v.hunger + 0.09 + p * 0.08);
     v.energy = clamp(v.energy - 0.04);
-    if (
-      (!v.route.length && w.tick >= (v.nextDecision ?? 0)) ||
-      (v.thirst > 60 &&
-        !v.action.includes("puits") &&
-        !v.action.includes("point d’eau") &&
-        w.tick >= (v.nextDecision ?? 0))
-    )
-      destination(w, v);
-    const wasTravelling = v.route.length > 0;
-    moveResident(w, v, 0.11 * (0.6 + v.energy / 250));
-    if (wasTravelling && v.route.length === 0) {
-      // Give work and needs a real stop after arrival, even after a long trip.
-      v.nextDecision = Math.max(v.nextDecision ?? 0, w.tick + 24 + (v.id % 12));
+    if (v.repairTarget !== undefined) {
+      const site = w.buildings[v.repairTarget];
+      if (
+        !site ||
+        !v.action.startsWith("Reconstruit") ||
+        !canRebuild(w, v, site)
+      ) {
+        delete v.repairTarget;
+        if (v.action.startsWith("Reconstruit")) {
+          v.action = "Interrompt la reconstruction";
+          v.actionAt = w.tick;
+          v.route = [];
+          v.target = [v.x, v.y];
+          v.nextDecision = w.tick;
+        }
+      }
+    }
+    const visiting = updateHomeVisit(w, v);
+    if (!visiting) {
+      if (
+        (!v.route.length && w.tick >= (v.nextDecision ?? 0)) ||
+        (v.thirst > 60 &&
+          !v.action.includes("puits") &&
+          !v.action.includes("point d’eau") &&
+          w.tick >= (v.nextDecision ?? 0)) ||
+        (v.hunger > 75 &&
+          !/repas|manger/.test(v.action) &&
+          w.tick >= (v.nextDecision ?? 0))
+      )
+        destination(w, v);
+      const wasTravelling = v.route.length > 0;
+      moveResident(w, v, 0.11 * (0.6 + v.energy / 250));
+      if (wasTravelling && v.route.length === 0) {
+        v.actionAt = w.tick;
+        // Give work and needs a real stop after arrival, even after a long trip.
+        v.nextDecision = Math.max(
+          v.nextDecision ?? 0,
+          w.tick + 24 + (v.id % 12),
+        );
+      }
+      tryHomeVisit(w, v);
     }
     const arrived = Math.hypot(v.x - v.target[0], v.y - v.target[1]) < 0.3;
     if (arrived) {
+      const rebuilt = repairAtDestination(w, v);
+      if (rebuilt) {
+        rebuilt.events.unshift(
+          note(
+            w,
+            `${v.name} termine une étape de la reconstruction de ${rebuilt.name}.`,
+            "hope",
+            v.id,
+          ),
+        );
+        rebuilt.events.length = Math.min(12, rebuilt.events.length);
+      }
       if (
         (v.action.includes("puits") || v.action.includes("point d’eau")) &&
         w.water > 1
@@ -520,7 +605,8 @@ export function step(w: World) {
         v.hunger = clamp(v.hunger - 2);
         w.food = clamp(w.food - 0.015);
       }
-      if (v.action.includes("repose")) v.energy = clamp(v.energy + 1);
+      if (v.action.includes("repose"))
+        v.energy = clamp(v.energy + (indoors(v) ? 1.3 : 1));
     }
     updateNutrition(v);
     v.morale = clamp(
