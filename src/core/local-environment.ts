@@ -43,7 +43,12 @@ export function updateLocalEnvironment(w: World) {
   ) => {
     const bank = Math.max(0, 1 - Math.abs(x - riverCenter(y)) / 7);
     const shelter = noise(x, y);
-    const wet = w.moisture * 0.65 + w.water * bank * 0.35;
+    // Rain-fed soils can recover away from the river after reserves return.
+    const replenished = w.pressure < 20 && w.water > 60 && w.moisture > 55;
+    const irrigation = replenished
+      ? bank + (1 - bank) * Math.min(0.6, (w.moisture - 55) / 50)
+      : bank;
+    const wet = w.moisture * 0.65 + w.water * irrigation * 0.35;
     const target = clamp(
       wet + shelter * 12 - w.pressure * (0.2 + (1 - shelter) * 0.2),
     );

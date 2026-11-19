@@ -94,3 +94,16 @@ it("uses the carrying walk while travelling and stops its leg cycle at destinati
   const stopped = vi.mocked(atlas.gauntActivities.carry.draw).mock.calls[1];
   expect(stopped[1] % 6).toBe(0);
 });
+
+it("requests the new detailed atlases only when their action appears", () => {
+  const { atlas, w, v, ctx } = setup();
+  expect(atlas.gauntActivities.bake.image.src).toBe("");
+  expect(atlas.gauntFightCycle.image.src).toBe("");
+  v.action = "Pétrit le pain";
+  atlas.draw(ctx, v, w, 0, 0, 0, 1);
+  expect(atlas.gauntActivities.bake.image.src).toBe(
+    "/assets/residents-gaunt-bake.png",
+  );
+  expect(atlas.activities.bake.image.src).toBe("");
+  expect(atlas.gauntFightCycle.image.src).toBe("");
+});

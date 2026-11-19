@@ -1,3 +1,4 @@
+import { canRebuild } from "./reconstruction";
 import type { Building, Villager, World } from "./types";
 import { buildingWear, localHealth } from "./local-environment";
 import { isWet, season } from "./seasons";
@@ -169,6 +170,20 @@ export function personCauses(w: World, v: Villager): VillageCause[] {
 }
 export function buildingCauses(w: World, b: Building): VillageCause[] {
   const causes: VillageCause[] = [];
+  const worker = w.villagers.find(
+    (v) =>
+      v.repairTarget === b.id &&
+      v.action.startsWith("Reconstruit") &&
+      canRebuild(w, v, b),
+  );
+  if (worker)
+    causes.push({
+      id: "reconstruction",
+      title: `${worker.name} participe à la reconstruction`,
+      detail: worker.route.length
+        ? "Le chantier commence à son arrivée. Les besoins urgents ou un danger peuvent interrompre le trajet."
+        : "Les travaux font remonter l’état du bâtiment et consomment de l’énergie. La chronique retient les étapes franchies.",
+    });
   if (nearFire(w, b.x, b.y, 1))
     causes.push({
       id: "fire",

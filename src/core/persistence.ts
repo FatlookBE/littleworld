@@ -168,6 +168,9 @@ export function restore(text: string): World {
           v.route.length !== 0
         : v.diedAt !== undefined) ||
       (v.actionAt !== undefined && !finite(v.actionAt, 0, w.tick)) ||
+      (v.repairTarget !== undefined &&
+        (!Number.isInteger(v.repairTarget) ||
+          !finite(v.repairTarget, 0, 14))) ||
       (v.walkWait !== undefined &&
         (!Number.isInteger(v.walkWait) || !finite(v.walkWait, 0, 1000))) ||
       (v.visitAfter !== undefined && !finite(v.visitAfter, 0, 1e12)) ||

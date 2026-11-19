@@ -1,3 +1,4 @@
+import { loadPaintedImage } from "./asset-status";
 /**
  * Small ambient creatures living in the void around the world: glowing
  * jellyfish below the turtle, a tiny whale that crosses now and then, and
@@ -21,7 +22,7 @@ function paintFauna(
 ) {
   if (!fauna) {
     fauna = new Image();
-    fauna.src = "/assets/void-fauna.png";
+    loadPaintedImage(fauna, "/assets/void-fauna.png");
   }
   if (!fauna.complete || !fauna.naturalWidth) return false;
   const half = fauna.width / 2;

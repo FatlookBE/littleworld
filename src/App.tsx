@@ -1,3 +1,6 @@
+import { LocalDiagnostics } from "./LocalDiagnostics";
+import { VillageAudioSettings } from "./VillageAudioSettings";
+import { useVillageAudio } from "./use-village-audio";
 import {
   villageCauses,
   personCauses,
@@ -140,6 +143,7 @@ function App() {
     lastStory = useRef(-1),
     drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const w = view;
+  const villageAudio = useVillageAudio(w, paused || !ready);
   useEffect(() => {
     running.current = { paused, speed };
     selection.current = selected;
@@ -965,6 +969,7 @@ function App() {
           {panel === "settings" && (
             <>
               <h2>Prendre le temps.</h2>
+              <VillageAudioSettings {...villageAudio} />
               <label className="field">
                 Scénario
                 <select
@@ -1453,6 +1458,11 @@ function App() {
               >
                 Exporter les métadonnées <span>↓</span>
               </button>
+              <LocalDiagnostics
+                world={w}
+                saveStatus={saveStatus}
+                syncError={sync.error}
+              />
               <h3>Confidentialité & conservation</h3>
               <p className="fine-print">
                 Tout reste dans IndexedDB sur cet appareil. Aucun serveur,

@@ -1637,3 +1637,22 @@ body {
   font-size: 12px;
   line-height: 1.6;
 }
+
+.village-audio-settings {
+  min-width: 0;
+  margin: 0 0 20px;
+  padding: 8px 12px 0;
+  border: 1px solid var(--line);
+}
+.village-audio-settings legend {
+  padding-inline: 5px;
+  color: #e6d6af;
+}
+.village-audio-settings .check {
+  min-height: 44px;
+}
+.village-audio-settings input[type="range"] {
+  min-height: 32px;
+  width: 100%;
+  accent-color: #d1b77d;
+}

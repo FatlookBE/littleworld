@@ -220,3 +220,19 @@ Point 7 : santé et brûlure persistantes par arbre et zone de sol ; exposition 
 Points 8 à 11 : nouveaux cycles de combat, pain, soins et portage pour les quatre identités, y compris leurs variantes faméliques. Passages de porte, repos intérieur, évacuation et restauration testés. Les 24 habitants entrent et ressortent dans la simulation de contrôle. Détours autour des voisins arrêtés et préemption pour la faim urgente. Le bouton « Comprendre » montre les mécanismes en jeu et les fiches donnent des explications propres à la personne ou au lieu.
 
 140 tests, build et lint réussis. Revue indépendante 9/10 pour chacun des quatre points. Transparence contrôlée sur les huit planches. Le panneau a été ouvert dans le navigateur et les passages observés aux différents âges du cycle pour une maison intacte et une maison abîmée. La fluidité des huit nouveaux cycles n’a pas été contrôlée indépendamment dans le navigateur.
+
+### Reconstruction du village — 19 novembre 2026
+
+Lorsque les réserves et la pression le permettent, les habitants se rendent près des bâtiments endommagés pour les reconstruire. La simulation réserve un chantier par lieu, donne la priorité au puits et interrompt le travail si un besoin urgent ou un danger survient. Les étapes sont visibles grâce aux dessins de dégâts existants et apparaissent dans la chronique. Les sols éloignés du ruisseau se rétablissent progressivement quand les sols et les réserves se rechargent. La récupération nutritionnelle se poursuit avec les repas.
+
+144 tests après correction des interruptions de chantier. Revue indépendante 9/10 pour le code et les comportements testés. Les nouvelles animations de chantier n’ont pas été vérifiées dans le navigateur.
+
+### Son, rendu et diagnostic local — 19 novembre 2026
+
+L’ambiance sonore originale s’active dans Réglages, avec volume mémorisé et silence en pause ou lorsque l’onglet est masqué. Chromium a confirmé l’activation, la pause, la reprise, la conservation du volume et la fermeture du contexte. Le résultat sonore n’a pas fait l’objet d’une écoute humaine.
+
+Les huit nouvelles planches sont chargées à leur première utilisation, avec un dessin de repli pendant le chargement. Le terrain réutilise ses motifs et le contour des parcelles. Aucun gain chiffré de fréquence d’affichage n’a été mesuré.
+
+Le diagnostic dans Synchro & données vérifie si l’état actuel peut être restauré et repère les relevés dupliqués ainsi que les images demandées qui n’ont pas chargé. Chromium, dans une session isolée, a confirmé qu’une requête bloquée pour world-slab.png apparaît dans le diagnostic avec un export restaurable.
+
+148 tests, build et lint réussis. Revue indépendante 9/10 pour chacun de ces trois changements.

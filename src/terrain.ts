@@ -1,3 +1,4 @@
+import { loadPaintedImage } from "./asset-status";
 import { localHealth, plotPosition } from "./core/local-environment";
 import { paintDecayTransition, type DecayTransition } from "./decay-transition";
 import { drawRiver } from "./water";
@@ -8,6 +9,11 @@ export class PaintedTerrain {
   image = new Image();
   materials: HTMLCanvasElement[] = [];
   ready = false;
+  private readonly patterns = new WeakMap<
+    HTMLCanvasElement,
+    Map<number, CanvasPattern>
+  >();
+  private plotPaths?: Path2D[];
   private stageMaterials: HTMLCanvasElement[][] = [this.materials];
   constructor() {
     ["materials", "withered", "ruined", "horror"].forEach((name, stage) => {
@@ -36,7 +42,7 @@ export class PaintedTerrain {
           this.ready = true;
         }
       };
-      image.src = `/assets/terrain-${name}.png`;
+      loadPaintedImage(image, `/assets/terrain-${name}.png`);
     });
   }
   get readyStages() {
@@ -87,9 +93,16 @@ export class PaintedTerrain {
     ctx.rect(0, 0, 29, 29);
     ctx.clip();
     const material = (i: number, size = 8) => {
-      const p = ctx.createPattern(materials[i], "repeat")!;
-      p.setTransform(new DOMMatrix().scale(size / 512));
-      return p;
+      const source = materials[i];
+      let bySize = this.patterns.get(source);
+      if (!bySize) this.patterns.set(source, (bySize = new Map()));
+      let pattern = bySize.get(size);
+      if (!pattern) {
+        pattern = ctx.createPattern(source, "repeat")!;
+        pattern.setTransform(new DOMMatrix().scale(size / 512));
+        bySize.set(size, pattern);
+      }
+      return pattern;
     };
     ctx.fillStyle = material(0);
     ctx.fillRect(0, 0, 29, 29);
@@ -97,24 +110,26 @@ export class PaintedTerrain {
     ctx.fillStyle = material(1);
     ctx.fillRect(0, 0, 29, 29);
     // Irregular painted patches keep local soil health legible without tile borders.
-    for (let i = 0; i < 36; i++) {
-      const [x, y] = plotPosition(i);
-      const cell = w.localEnvironment?.plots[i];
-      if (!cell) continue;
-      const dryness = 1 - cell.health / 100;
-      const patch = new Path2D();
-      patch.ellipse(x, y, 3.3, 3, Math.sin(i * 2.1) * 0.5, 0, Math.PI * 2);
-      ctx.save();
-      ctx.clip(patch);
-      ctx.globalAlpha = Math.min(0.7, dryness * 0.8);
-      ctx.fillStyle = material(1, 6);
-      ctx.fillRect(x - 5, y - 5, 10, 10);
-      if (cell.scorch > 1) {
-        ctx.globalAlpha = (cell.scorch / 100) * 0.65;
-        ctx.fillStyle = "#211c19";
-        ctx.fillRect(x - 5, y - 5, 10, 10);
-      }
-      ctx.restore();
+    if (w.localEnvironment) {
+      this.plotPaths ??= Array.from({ length: 36 }, (_, i) => {
+        const [x, y] = plotPosition(i);
+        const path = new Path2D();
+        path.ellipse(x, y, 3.3, 3, Math.sin(i * 2.1) * 0.5, 0, Math.PI * 2);
+        return path;
+      });
+      const soil = material(1, 6);
+      w.localEnvironment.plots.forEach((cell, i) => {
+        if (cell.health < 100) {
+          ctx.globalAlpha = Math.min(0.7, (1 - cell.health / 100) * 0.8);
+          ctx.fillStyle = soil;
+          ctx.fill(this.plotPaths![i]);
+        }
+        if (cell.scorch > 1) {
+          ctx.globalAlpha = (cell.scorch / 100) * 0.65;
+          ctx.fillStyle = "#211c19";
+          ctx.fill(this.plotPaths![i]);
+        }
+      });
     }
     const autumn = autumnColour(w.tick),
       snow = snowCover(w.tick) * (stage >= 2 ? 0.15 : 1);

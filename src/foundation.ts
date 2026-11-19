@@ -1,3 +1,4 @@
+import { loadPaintedImage } from "./asset-status";
 import {
   decayTransition,
   paintDecayTransition,
@@ -76,9 +77,9 @@ export class WorldFoundation {
       image.onload = () => {
         this.slabReady[i + 1] = true;
       };
-      image.src = `/assets/world-slab-${name}.png`;
+      loadPaintedImage(image, `/assets/world-slab-${name}.png`);
     });
-    this.image.src = "/assets/world-slab.png";
+    loadPaintedImage(this.image, "/assets/world-slab.png");
   }
   draw(
     ctx: CanvasRenderingContext2D,

@@ -30,7 +30,8 @@ export function residentAction(v: Villager, w: World): ResidentAction | null {
     return w.water > 1 ? "drink" : null;
   if (/repas|manger/.test(action)) return w.food > 1 ? "eat" : null;
   if (/cueille|cultures|récolte|verger/.test(action)) return "gather";
-  if (/répare|atelier|pompe|jette de l’eau/.test(action)) return "work";
+  if (/répare|reconstruit|atelier|pompe|jette de l’eau/.test(action))
+    return "work";
   return null;
 }
 

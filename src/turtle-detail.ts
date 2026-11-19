@@ -1,3 +1,4 @@
+import { loadPaintedImage } from "./asset-status";
 // Eye sockets in the local coordinates of each 768 × 1024 swimming pose.
 const eyeCenters = [
   [276, 585],
@@ -113,10 +114,12 @@ export class TurtleDetail {
         }
         if (++loaded === 4) this.ready = true;
       };
-      image.src =
+      loadPaintedImage(
+        image,
         variant === "healthy"
           ? `/assets/turtle-detail-${pair}.png`
-          : `/assets/turtle-${variant}-hd-${pair}.png`;
+          : `/assets/turtle-${variant}-hd-${pair}.png`,
+      );
     }
   }
   draw(

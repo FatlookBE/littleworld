@@ -1,3 +1,4 @@
+import { loadPaintedImage } from "./asset-status";
 import { nutritionStage } from "./core/nutrition";
 import { residentAction, residentActionTime } from "./resident-actions";
 import { AnimationAtlas, loopFrame } from "./animation";
@@ -112,19 +113,15 @@ export const residentSkin = (id: number) =>
   [2, 3, 1, 0, 1, 0, 3, 2, 3, 0, 1, 2, 1, 0, 3, 0, 1, 0, 1, 0, 1, 2, 3, 2][
     id
   ] ?? 0;
+const detailedActivityAtlas = (path: string) =>
+  new AnimationAtlas(path, 6, 4, 0, true, true, undefined, true);
+
 export class ResidentAtlas {
   image: HTMLImageElement;
   activities = {
-    bake: new AnimationAtlas("/assets/residents-bake.png", 6, 4, 0, true, true),
-    care: new AnimationAtlas("/assets/residents-care.png", 6, 4, 0, true, true),
-    carry: new AnimationAtlas(
-      "/assets/residents-carry.png",
-      6,
-      4,
-      0,
-      true,
-      true,
-    ),
+    bake: detailedActivityAtlas("/assets/residents-bake.png"),
+    care: detailedActivityAtlas("/assets/residents-care.png"),
+    carry: detailedActivityAtlas("/assets/residents-carry.png"),
     gather: new AnimationAtlas(
       "/assets/residents-gather.png",
       6,
@@ -160,30 +157,9 @@ export class ResidentAtlas {
     true,
   );
   gauntActivities = {
-    bake: new AnimationAtlas(
-      "/assets/residents-gaunt-bake.png",
-      6,
-      4,
-      0,
-      true,
-      true,
-    ),
-    care: new AnimationAtlas(
-      "/assets/residents-gaunt-care.png",
-      6,
-      4,
-      0,
-      true,
-      true,
-    ),
-    carry: new AnimationAtlas(
-      "/assets/residents-gaunt-carry.png",
-      6,
-      4,
-      0,
-      true,
-      true,
-    ),
+    bake: detailedActivityAtlas("/assets/residents-gaunt-bake.png"),
+    care: detailedActivityAtlas("/assets/residents-gaunt-care.png"),
+    carry: detailedActivityAtlas("/assets/residents-gaunt-carry.png"),
     gather: new AnimationAtlas(
       "/assets/residents-gaunt-gather.png",
       6,
@@ -227,21 +203,9 @@ export class ResidentAtlas {
     true,
     [0, 265, 537, 793, 1024],
   );
-  fightCycle = new AnimationAtlas(
-    "/assets/residents-fight-cycle.png",
-    6,
-    4,
-    0,
-    true,
-    true,
-  );
-  gauntFightCycle = new AnimationAtlas(
+  fightCycle = detailedActivityAtlas("/assets/residents-fight-cycle.png");
+  gauntFightCycle = detailedActivityAtlas(
     "/assets/residents-gaunt-fight-cycle.png",
-    6,
-    4,
-    0,
-    true,
-    true,
   );
   reactions = new AnimationAtlas("/assets/residents-hit.png", 4, 4);
   variants = new Image();
@@ -258,7 +222,7 @@ export class ResidentAtlas {
     this.image.onerror = () => {
       this.failed = true;
     };
-    this.image.src = "/assets/residents-atlas.png";
+    loadPaintedImage(this.image, "/assets/residents-atlas.png");
     this.variants.onload = () => {
       const image = this.variants,
         c = document.createElement("canvas");
@@ -302,7 +266,7 @@ export class ResidentAtlas {
       }
       this.variantsReady = true;
     };
-    this.variants.src = "/assets/residents-variants.png";
+    loadPaintedImage(this.variants, "/assets/residents-variants.png");
   }
   draw(
     ctx: CanvasRenderingContext2D,
@@ -354,6 +318,7 @@ export class ResidentAtlas {
         ? this.gauntActivities[activity]
         : this.activities[activity]
       : null;
+    activityAtlas?.load();
     if (activityAtlas?.ready) {
       const moving = v.route.length > 0;
       const target = v.route[0] ?? v.target;
@@ -383,6 +348,7 @@ export class ResidentAtlas {
       (e) => e.kind === "fight" && e.people.includes(v.id),
     );
     const fightCycle = gaunt ? this.gauntFightCycle : this.fightCycle;
+    if (fighting) fightCycle.load();
     if (fighting && fightCycle.ready) {
       const otherId = w.disasters
         ?.find((e) => e.kind === "fight" && e.people.includes(v.id))
