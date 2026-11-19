@@ -12,51 +12,17 @@ const eyeCenters = [
 const eyeRadiusX = 25,
   eyeRadiusY = 18;
 
-// Match fine painted texture across the ruined swim cycle. The last
-// pair has the softest source detail. Gains are in source-pixel space.
-const ruinedDetailGain = [0.02, 0.045, 0.05, 0.047, 0.067, 0.027, 0.115, 0.106];
-
-function sharpenRuinedPair(sheet: ImageData, pair: number) {
-  const { data, width, height } = sheet;
-  const source = new Uint8ClampedArray(data);
-  const stride = width * 4;
-  const cell = width / 2;
-  for (let col = 0; col < 2; col++) {
-    const gain = ruinedDetailGain[pair * 2 + col];
-    if (!gain) continue;
-    for (let y = 1; y < height - 1; y++) {
-      for (let x = col * cell + 1; x < (col + 1) * cell - 1; x++) {
-        const i = y * stride + x * 4;
-        // Preserve antialiased silhouettes and their transparent neighbours.
-        if (
-          source[i + 3] < 245 ||
-          source[i - 1] < 245 ||
-          source[i + 7] < 245 ||
-          source[i - stride + 3] < 245 ||
-          source[i + stride + 3] < 245
-        )
-          continue;
-        for (let c = i; c < i + 3; c++) {
-          const detail =
-            source[c] * 4 -
-            source[c - 4] -
-            source[c + 4] -
-            source[c - stride] -
-            source[c + stride];
-          data[c] = source[c] + gain * detail;
-        }
-      }
-    }
-  }
-}
+export type TurtleVariant = "healthy" | "withered" | "ruined" | "horror";
 
 /** Large two-pose sheets preserve painted detail when the world is zoomed in. */
 export class TurtleDetail {
-  images: (HTMLImageElement | HTMLCanvasElement)[] = [];
+  images: HTMLImageElement[] = [];
   ready = false;
   private eye = document.createElement("canvas");
   private anchors: { top: number; crownX: number; shellWidth: number }[] = [];
-  constructor(variant: "healthy" | "ruined" = "healthy") {
+  private readonly variant: TurtleVariant;
+  constructor(variant: TurtleVariant = "healthy") {
+    this.variant = variant;
     let loaded = 0;
     for (let pair = 0; pair < 4; pair++) {
       const image = new Image();
@@ -69,11 +35,6 @@ export class TurtleDetail {
         if (!ctx) return;
         ctx.drawImage(image, 0, 0);
         const sheet = ctx.getImageData(0, 0, image.width, image.height);
-        if (variant === "ruined") {
-          sharpenRuinedPair(sheet, pair);
-          ctx.putImageData(sheet, 0, 0);
-          this.images[pair] = canvas;
-        }
         const pixels = sheet.data;
         for (let col = 0; col < 2; col++) {
           const left = Math.round((col * image.width) / 2);
@@ -121,9 +82,9 @@ export class TurtleDetail {
             crownX: count ? sum / count : (right - left) / 2,
           };
         }
-        // Pose 1 has a clearly drawn pupil in both variants. Reuse its iris
+        // Pose 1 has a clearly drawn healthy pupil. Reuse its iris
         // and eyelids with a soft edge that blends into each moving socket.
-        if (pair === 0) {
+        if (pair === 0 && variant === "healthy") {
           this.eye.width = eyeRadiusX * 2;
           this.eye.height = eyeRadiusY * 2;
           const eye = this.eye.getContext("2d");
@@ -155,7 +116,7 @@ export class TurtleDetail {
       image.src =
         variant === "healthy"
           ? `/assets/turtle-detail-${pair}.png`
-          : `/assets/turtle-ruined-${pair}.webp`;
+          : `/assets/turtle-${variant}-hd-${pair}.png`;
     }
   }
   draw(
@@ -207,8 +168,11 @@ export class TurtleDetail {
     );
     ctx.scale(ratio, ratio);
     ctx.drawImage(image, (frame % 2) * 768, 0, 768, 1024, 0, 0, 768, 1024);
-    const [eyeX, eyeY] = eyeCenters[frame];
-    ctx.drawImage(this.eye, eyeX - eyeRadiusX, eyeY - eyeRadiusY);
+    // The new ruined art has its own clean pupil in every full-resolution pose.
+    if (this.variant === "healthy") {
+      const [eyeX, eyeY] = eyeCenters[frame];
+      ctx.drawImage(this.eye, eyeX - eyeRadiusX, eyeY - eyeRadiusY);
+    }
     ctx.restore();
     return true;
   }

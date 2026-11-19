@@ -13,6 +13,8 @@ export function validateEvent(v: unknown): UsageEvent {
     !Number.isFinite(Date.parse(e.at)) ||
     !count(e.input) ||
     !count(e.output) ||
+    (e.project !== undefined &&
+      (typeof e.project !== "string" || e.project.length > 1024)) ||
     (e.cached !== undefined && (!count(e.cached) || e.cached > e.input)) ||
     (e.reasoning !== undefined &&
       (!count(e.reasoning) || e.reasoning > e.output))
@@ -27,10 +29,22 @@ export function validateEvent(v: unknown): UsageEvent {
     provenance: e.provenance,
     input: e.input,
     output: e.output,
+    ...(e.project ? { project: e.project } : {}),
     ...(e.cached === undefined ? {} : { cached: e.cached }),
     ...(e.reasoning === undefined ? {} : { reasoning: e.reasoning }),
   };
 }
+export const usageSessionKey = (e: Pick<UsageEvent, "origin" | "session">) =>
+  JSON.stringify([e.origin, e.session]);
+export function usageIncluded(e: UsageEvent, s: World["settings"]) {
+  return (
+    (!s.usageProject || (e.project || "__unknown__") === s.usageProject) &&
+    (!s.usageSession || usageSessionKey(e) === s.usageSession)
+  );
+}
+export const selectedUsage = (w: World) =>
+  w.usage.filter((e) => usageIncluded(e, w.settings));
+
 /** Tokens that cost real effort: fresh input (cache excluded) plus output. */
 export const freshTokens = (
   e: Pick<UsageEvent, "input" | "output" | "cached">,
@@ -45,7 +59,7 @@ export const isAdaptive = (w: World) => w.settings.adaptive !== false;
 /** Fresh tokens used on each UTC day. */
 export function dailyFresh(w: World) {
   const days = new Map<string, number>();
-  for (const e of w.usage) {
+  for (const e of selectedUsage(w)) {
     const d = e.at.slice(0, 10);
     days.set(d, (days.get(d) ?? 0) + freshTokens(e, w.settings));
   }
@@ -81,7 +95,11 @@ export function ingest(w: World, event: UsageEvent) {
     const delta =
       Math.max(0, e.input - previous.input) +
       Math.max(0, e.output - previous.output);
-    const changed = delta > 0;
+    const metadataChanged = Boolean(
+      e.project && previous.project !== e.project,
+    );
+    if (e.project) previous.project = e.project;
+    const changed = delta > 0 || metadataChanged;
     const before = freshTokens(previous, w.settings);
     previous.input = Math.max(previous.input, e.input);
     previous.output = Math.max(previous.output, e.output);
@@ -89,7 +107,7 @@ export function ingest(w: World, event: UsageEvent) {
       previous.cached = Math.max(previous.cached ?? 0, e.cached);
     if (e.reasoning !== undefined)
       previous.reasoning = Math.max(previous.reasoning ?? 0, e.reasoning);
-    if (changed) {
+    if (delta > 0 && usageIncluded(e, w.settings)) {
       w.lastUsageTick = w.tick;
       const fresh = Math.max(0, freshTokens(previous, w.settings) - before);
       w.relief = Math.max(
@@ -104,6 +122,7 @@ export function ingest(w: World, event: UsageEvent) {
       "Limite de 20 000 événements atteinte. Exportez votre sauvegarde.",
     );
   w.usage.push(e);
+  if (!usageIncluded(e, w.settings)) return true;
   w.lastUsageTick = w.tick;
   w.relief = Math.max(
     0,
@@ -116,11 +135,11 @@ export function totals(
   w: World,
   window: "session" | "day" | "lifetime" = "lifetime",
 ) {
-  const events = w.usage.filter(
+  const events = selectedUsage(w).filter(
     (e) =>
       window === "lifetime" ||
       (window === "session"
-        ? e.session === w.session
+        ? Boolean(w.settings.usageSession) || e.session === w.session
         : e.at.slice(0, 10) === w.day),
   );
   return events.reduce(
@@ -243,15 +262,113 @@ export class ClaudeAdapter implements Adapter {
  * history already on disk (totals, provenance) without draining the village:
  * only usage that happens afterwards counts as pressure.
  */
-export function syncUsage(w: World, events: UsageEvent[], baseline: boolean) {
+export function syncUsage(
+  w: World,
+  events: UsageEvent[],
+  baseline: boolean,
+  codexSessions: string[] = [],
+) {
   const { relief, lastUsageTick } = w;
   let changed = 0;
+  const migrated = new Set<string>();
+  const deferred = new Set<string>();
+  let migrationGrowth = 0;
+  // Migrate only complete, validated replacements. A truncated session file must
+  // never erase an already recorded cumulative total or count both formats.
+  for (const session of new Set(codexSessions)) {
+    const legacy = w.usage.filter(
+      (e) => e.origin === "codex" && e.session === session && e.id === session,
+    );
+    if (!legacy.length) continue;
+    const replacements = events.filter(
+      (e) => e.origin === "codex" && e.session === session,
+    );
+    const old = legacy.reduce(
+      (a, e) => ({ input: a.input + e.input, output: a.output + e.output }),
+      { input: 0, output: 0 },
+    );
+    let valid = replacements.length > 0;
+    try {
+      for (const e of replacements) {
+        validateEvent(e);
+        if (e.id !== `codex-day:${session}:${e.at.slice(0, 10)}`) valid = false;
+      }
+    } catch {
+      valid = false;
+    }
+    const ids = new Set(replacements.map((e) => e.id));
+    const sums = replacements.reduce(
+      (a, e) => ({ input: a.input + e.input, output: a.output + e.output }),
+      { input: 0, output: 0 },
+    );
+    if (
+      !valid ||
+      ids.size !== replacements.length ||
+      sums.input < old.input ||
+      sums.output < old.output ||
+      w.usage.length -
+        legacy.length +
+        replacements.filter(
+          (e) =>
+            !w.usage.some((old) => old.origin === e.origin && old.id === e.id),
+        ).length >
+        20000
+    ) {
+      deferred.add(session);
+      continue;
+    }
+    const project = replacements.find((e) => e.project)?.project;
+    const before = w.usage
+      .filter((e) => e.origin === "codex" && e.session === session)
+      .reduce(
+        (sum, e) =>
+          sum +
+          (usageIncluded({ ...e, project: e.project ?? project }, w.settings)
+            ? freshTokens(e, w.settings)
+            : 0),
+        0,
+      );
+    const after = replacements.reduce(
+      (sum, e) =>
+        sum + (usageIncluded(e, w.settings) ? freshTokens(e, w.settings) : 0),
+      0,
+    );
+    migrationGrowth += Math.max(0, after - before);
+    w.usage = w.usage.filter((e) => !legacy.includes(e));
+    migrated.add(session);
+    changed++;
+  }
   for (const e of events) {
+    if (
+      e.origin === "codex" &&
+      (deferred.has(e.session) ||
+        (e.id.startsWith("codex-day:") &&
+          w.usage.some(
+            (old) =>
+              old.origin === "codex" &&
+              old.session === e.session &&
+              old.id === e.session,
+          )))
+    )
+      continue;
+    const beforeRelief = w.relief,
+      beforeTick = w.lastUsageTick;
     try {
       if (ingest(w, e)) changed++;
     } catch {
       /* one bad or contradictory row must not block the others */
     }
+    if (e.origin === "codex" && migrated.has(e.session)) {
+      w.relief = beforeRelief;
+      w.lastUsageTick = beforeTick;
+    }
+  }
+  if (migrationGrowth > 0) {
+    w.relief = Math.max(
+      0,
+      w.relief - (migrationGrowth / (w.budgetNow ?? w.settings.budget)) * 100,
+    );
+    w.lastUsageTick = w.tick;
   }
   if (baseline) {
     w.relief = relief;

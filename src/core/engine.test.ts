@@ -250,7 +250,7 @@ describe("simulation", () => {
     );
   });
   it("changes environment continuously and respects editable thresholds", () => {
-    const w = createWorld();
+    const w = createWorld(Date.parse("2026-11-18T12:00:00Z"));
     ingest(w, usage({ input: 100000, output: 0 }));
     step(w);
     expect(w.pressure).toBeGreaterThan(0);

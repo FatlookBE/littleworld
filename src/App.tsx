@@ -16,6 +16,12 @@ import {
 } from "./core/engine";
 import {
   totals,
+  selectedUsage,
+  usageSessionKey,
+  effectiveBudget,
+  isAdaptive,
+  ADAPTIVE_DAYS,
+  adaptiveFloor,
   DemoAdapter,
   ReplayAdapter,
   CodexAdapter,
@@ -108,19 +114,30 @@ function App() {
     if (!ready) return;
     let live = true,
       timer = 0;
-    const url = "http://127.0.0.1:5175/usage";
+    const url = "http://127.0.0.1:5175/usage?format=2";
     const poll = async () => {
       try {
         const res = await fetch(url, { cache: "no-store" });
         if (!res.ok) throw Error(String(res.status));
-        const events = new ReplayAdapter().read(await res.text());
+        const payload = await res.json();
+        const dailySnapshot =
+          payload?.version === 2 && Array.isArray(payload.events);
+        const events = new ReplayAdapter().read(
+          JSON.stringify(dailySnapshot ? payload.events : payload),
+        );
+        const codexSessions =
+          dailySnapshot && Array.isArray(payload.codexSessions)
+            ? payload.codexSessions.filter(
+                (id: unknown): id is string => typeof id === "string",
+              )
+            : [];
         if (!live) return;
         const first = localStorage.getItem("tokenfall-bridge-seen") !== "1";
-        const changed = syncUsage(world.current, events, first);
+        const changed = syncUsage(world.current, events, first, codexSessions);
         localStorage.setItem("tokenfall-bridge-seen", "1");
         if (changed) update();
         setSyncStatus(
-          `Synchronisé à ${new Date().toLocaleTimeString("fr-FR")} · ${events.length} tours suivis`,
+          `Synchronisé à ${new Date().toLocaleTimeString("fr-FR")} · ${events.length} relevés${dailySnapshot && payload.incompleteCodexSessions > 0 ? ` · ${payload.incompleteCodexSessions} historique(s) Codex incomplet(s), dates partielles` : ""}`,
         );
       } catch {
         if (live)
@@ -280,7 +297,18 @@ function App() {
   }, []);
   const population = residents(w).length,
     latest = w.chronicle[0];
-  const provenance = [...new Set(w.usage.map((e) => e.provenance))];
+  const dailyUsage = dailyFresh(w);
+  const todayTokens = dailyUsage.get(w.day) ?? 0;
+  const displayedBudget = effectiveBudget(w, dailyUsage);
+  const budgetDays = [...dailyUsage.keys()].filter((day) => day < w.day).length;
+  const countedCategories =
+    [
+      w.settings.includeInput ? "entrées hors cache" : null,
+      w.settings.includeOutput ? "sorties" : null,
+    ]
+      .filter(Boolean)
+      .join(" + ") || "aucune catégorie activée";
+  const provenance = [...new Set(selectedUsage(w).map((e) => e.provenance))];
   const badge =
     provenance.length === 0 || provenance.every((p) => p === "demo")
       ? "DÉMO"
@@ -423,9 +451,13 @@ function App() {
                 ? "Scénario quotidien"
                 : "Scénario de session"}
           </span>
-          <button className="provenance" onClick={() => toggle("data")}>
-            {badge}
-            <span>↗</span>
+          <button
+            className="provenance"
+            onClick={() => toggle("data")}
+            aria-expanded={panel === "data"}
+          >
+            Synchro & données
+            <span aria-hidden="true">↗</span>
           </button>
         </div>
         <button
@@ -516,11 +548,11 @@ function App() {
         aria-label="État des réserves et de la consommation"
       >
         <div className="token-count">
-          <span>TOKENS AUJOURD’HUI</span>
-          <strong>
-            {fmt(dailyFresh(w).get(w.day) ?? 0)}
-            <small> / {fmt(w.budgetNow ?? w.settings.budget)}</small>
-          </strong>
+          <span>AUJOURD’HUI · UTC · HORS CACHE</span>
+          <strong>{fmt(todayTokens)}</strong>
+          <div className="token-budget-note">
+            Budget du jeu : {fmt(displayedBudget)}
+          </div>
         </div>
         <div className="pressure-stat">
           <span>
@@ -1043,7 +1075,129 @@ function App() {
           )}
           {panel === "data" && (
             <>
-              <h2>Une provenance claire.</h2>
+              <h2>Synchronisation & données</h2>
+              <p>
+                Suivez votre consommation Codex et Claude Code avec le pont
+                local, ou importez un fichier de métadonnées.
+              </p>
+              <h3>Activité qui influence le village</h3>
+              <label>
+                Projet
+                <select
+                  value={w.settings.usageProject ?? ""}
+                  onChange={(e) => {
+                    world.current.settings.usageProject =
+                      e.target.value || undefined;
+                    world.current.settings.usageSession = undefined;
+                    world.current.budgetNow = effectiveBudget(world.current);
+                    update();
+                  }}
+                >
+                  <option value="">Tous les projets</option>
+                  {[
+                    ...new Set(w.usage.map((e) => e.project || "__unknown__")),
+                    ...(w.settings.usageProject
+                      ? [w.settings.usageProject]
+                      : []),
+                  ]
+                    .filter((v, i, a) => a.indexOf(v) === i)
+                    .sort()
+                    .map((project) => (
+                      <option key={project} value={project}>
+                        {project === "__unknown__"
+                          ? "Projet non renseigné"
+                          : project}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <label>
+                Conversation
+                <select
+                  value={w.settings.usageSession ?? ""}
+                  onChange={(e) => {
+                    world.current.settings.usageSession =
+                      e.target.value || undefined;
+                    world.current.budgetNow = effectiveBudget(world.current);
+                    update();
+                  }}
+                >
+                  <option value="">Toutes les conversations</option>
+                  {[
+                    ...new Map(
+                      w.usage
+                        .filter(
+                          (e) =>
+                            !w.settings.usageProject ||
+                            (e.project || "__unknown__") ===
+                              w.settings.usageProject,
+                        )
+                        .map((e) => [usageSessionKey(e), e]),
+                    ).entries(),
+                  ].map(([key, e]) => (
+                    <option key={key} value={key}>
+                      {e.origin} · {e.session}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="fine-print">
+                Ce choix filtre les compteurs et la pression du village. Les
+                autres données restent conservées. Les titres de conversations
+                ne sont pas lus.
+              </p>
+              {selectedUsage(w).length === 0 && (
+                <p className="hint">
+                  Aucune consommation enregistrée pour cette sélection.
+                </p>
+              )}
+              <h3>Aujourd’hui · {w.day} · UTC</h3>
+              <div
+                className="accounting"
+                aria-label="Consommation du jour et budget fictif"
+              >
+                <div>
+                  <span>Tokens du jour retenus</span>
+                  <b>{fmt(todayTokens)}</b>
+                </div>
+                <div>
+                  <span>
+                    Budget fictif {isAdaptive(w) ? "adaptatif" : "fixe"}
+                  </span>
+                  <b>{fmt(displayedBudget)}</b>
+                </div>
+              </div>
+              <p className="fine-print">
+                Calcul : {countedCategories}. La journée change à minuit UTC. Le
+                cache connu est retiré des entrées ; le raisonnement est déjà
+                inclus dans les sorties.
+              </p>
+              <p className="hint">
+                {isAdaptive(w) && budgetDays > 0
+                  ? `Budget : deux fois la moyenne des ${Math.min(ADAPTIVE_DAYS, budgetDays)} derniers jours renseignés avant aujourd’hui, minimum ${fmt(adaptiveFloor)} tokens.`
+                  : isAdaptive(w)
+                    ? "Pas encore de journée passée renseignée : le budget fixe des réglages sert de référence."
+                    : "Le budget fixe est défini dans les réglages du village."}{" "}
+                Ce budget pilote le jeu ; il ne correspond ni à votre quota
+                Codex ni à une facture.
+              </p>
+              {!isAdaptive(w) && (
+                <p className="fine-print">
+                  Pour la pression, le scénario fixe utilise{" "}
+                  {w.settings.scenario === "daily"
+                    ? "la journée UTC"
+                    : w.settings.scenario === "session"
+                      ? "la session sélectionnée ou la session du village"
+                      : "tout l’historique sélectionné"}
+                  . Le compteur principal affiche toujours aujourd’hui.
+                </p>
+              )}
+              <h3>Historique importé · cache compris</h3>
+              <p className="fine-print">
+                Somme des entrées et sorties conservées pour la sélection,
+                toutes dates confondues. Ce total brut peut être beaucoup plus
+                élevé que le compteur du jour.
+              </p>
               <div className="source-badge">{badge}</div>
               <p>
                 {badge === "DÉMO"
@@ -1062,7 +1216,7 @@ function App() {
                     </span>
                     <b>
                       {fmt(
-                        w.usage
+                        selectedUsage(w)
                           .filter((e) => e.provenance === p)
                           .reduce((s, e) => s + e.input + e.output, 0),
                       )}
@@ -1074,7 +1228,7 @@ function App() {
                 {syncStatus || "Synchronisation automatique…"}
               </p>
               <a href="?demo=village">Jouer la démo</a>
-              <h3>Importer des métadonnées</h3>
+              <h3>Détail de l’historique sélectionné</h3>
               <div
                 className="accounting"
                 aria-label="Détail des tokens conservés"
@@ -1091,13 +1245,14 @@ function App() {
                     <span>{label}</span>
                     <b>
                       {(key === "cached" || key === "reasoning") &&
-                      !w.usage.some((e) => e[key] !== undefined)
+                      !selectedUsage(w).some((e) => e[key] !== undefined)
                         ? "Non fourni"
-                        : fmt(totals(w)[key])}
+                        : `${fmt(totals(w)[key])}${(key === "cached" || key === "reasoning") && selectedUsage(w).some((e) => e[key] === undefined) ? " (partiel)" : ""}`}
                     </b>
                   </div>
                 ))}
               </div>
+              <h3>Importer des métadonnées</h3>
               <label className="field">
                 Format
                 <select

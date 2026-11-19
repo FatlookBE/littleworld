@@ -66,6 +66,10 @@ export function restore(text: string): World {
     !["session", "daily", "persistent"].includes(s.scenario) ||
     !finite(s.budget, 1000, 1e9) ||
     !finite(s.curve, 0.5, 2) ||
+    (s.usageProject !== undefined &&
+      (typeof s.usageProject !== "string" || s.usageProject.length > 1024)) ||
+    (s.usageSession !== undefined &&
+      (typeof s.usageSession !== "string" || s.usageSession.length > 500)) ||
     !finite(s.eventFrequency, 0.25, 2) ||
     ![7, 30, 90].includes(s.retentionDays) ||
     ![s.reducedMotion, s.storyCamera, s.includeInput, s.includeOutput].every(

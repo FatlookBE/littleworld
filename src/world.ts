@@ -1004,6 +1004,7 @@ export class WorldRenderer {
       s,
       { level, wet: wetLevel },
       this.time,
+      this.foundation.activeStage,
     );
     const wet = 1 - w.vegetation / 100;
     const riverX = (y: number) => 3.7 + Math.sin(y * 0.24) * 1.6;

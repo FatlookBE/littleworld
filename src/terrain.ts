@@ -6,28 +6,36 @@ export class PaintedTerrain {
   image = new Image();
   materials: HTMLCanvasElement[] = [];
   ready = false;
+  private stageMaterials: HTMLCanvasElement[][] = [this.materials];
   constructor() {
-    this.image.onload = () => {
-      for (let i = 0; i < 4; i++) {
-        const c = document.createElement("canvas");
-        c.width = 512;
-        c.height = 512;
-        c.getContext("2d")!.drawImage(
-          this.image,
-          ((i % 2) * this.image.width) / 2,
-          (Math.floor(i / 2) * this.image.height) / 2,
-          this.image.width / 2,
-          this.image.height / 2,
-          0,
-          0,
-          512,
-          512,
-        );
-        this.materials.push(c);
-      }
-      this.ready = true;
-    };
-    this.image.src = "/assets/terrain-materials.png";
+    ["materials", "withered", "ruined", "horror"].forEach((name, stage) => {
+      const image = stage === 0 ? this.image : new Image();
+      image.onload = () => {
+        const cells: HTMLCanvasElement[] = [];
+        for (let i = 0; i < 4; i++) {
+          const c = document.createElement("canvas");
+          c.width = c.height = 512;
+          c.getContext("2d")!.drawImage(
+            image,
+            ((i % 2) * image.width) / 2,
+            (Math.floor(i / 2) * image.height) / 2,
+            image.width / 2,
+            image.height / 2,
+            0,
+            0,
+            512,
+            512,
+          );
+          cells.push(c);
+        }
+        this.stageMaterials[stage] = cells;
+        if (stage === 0) {
+          this.materials = cells;
+          this.ready = true;
+        }
+      };
+      image.src = `/assets/terrain-${name}.png`;
+    });
   }
   draw(
     ctx: CanvasRenderingContext2D,
@@ -36,8 +44,11 @@ export class PaintedTerrain {
     scale: number,
     water: { level: number; wet: number },
     time: number,
+    stage = 0,
   ) {
     if (!this.ready) return false;
+    while (stage > 0 && !this.stageMaterials[stage]) stage--;
+    const materials = this.stageMaterials[stage];
     ctx.save();
     ctx.transform(
       23 * scale,
@@ -50,7 +61,7 @@ export class PaintedTerrain {
     ctx.rect(0, 0, 29, 29);
     ctx.clip();
     const material = (i: number, size = 8) => {
-      const p = ctx.createPattern(this.materials[i], "repeat")!;
+      const p = ctx.createPattern(materials[i], "repeat")!;
       p.setTransform(new DOMMatrix().scale(size / 512));
       return p;
     };
@@ -60,7 +71,7 @@ export class PaintedTerrain {
     ctx.fillStyle = material(1);
     ctx.fillRect(0, 0, 29, 29);
     const autumn = autumnColour(w.tick),
-      snow = snowCover(w.tick);
+      snow = snowCover(w.tick) * (stage >= 2 ? 0.15 : 1);
     if (autumn > 0) {
       // Fallen leaves warm the grass.
       ctx.globalCompositeOperation = "soft-light";
@@ -147,7 +158,7 @@ export class PaintedTerrain {
       water.level,
       water.wet,
       time,
-      this.materials[3],
+      materials[3],
       w.weather === "Pluie légère",
       snow,
     );
@@ -176,7 +187,12 @@ export class PaintedTerrain {
       for (let col = 0; col < 14; col++) {
         const x = 5.3 + col * 0.4,
           y = 19.3 + row * 0.53;
-        ctx.strokeStyle = w.vegetation > 40 ? "#76813f" : "#9d8046";
+        ctx.strokeStyle =
+          stage >= 2
+            ? "#65574d"
+            : w.vegetation > 40 && stage === 0
+              ? "#76813f"
+              : "#9d8046";
         ctx.lineWidth = 0.1;
         ctx.beginPath();
         ctx.moveTo(x - 0.1, y + 0.08);

@@ -10,6 +10,7 @@ export interface UsageEvent {
   output: number;
   cached?: number;
   reasoning?: number;
+  project?: string;
 }
 export interface Memory {
   tick: number;
@@ -68,6 +69,8 @@ export interface Settings {
   includeOutput: boolean;
   /** Budget follows the average daily usage of past days (default on). */
   adaptive?: boolean;
+  usageProject?: string;
+  usageSession?: string;
 }
 export interface World {
   disasters?: import("./apocalypse").Disaster[];

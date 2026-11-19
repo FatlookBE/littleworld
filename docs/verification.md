@@ -148,3 +148,45 @@ Rendu : feuillus dorés puis nus, conifères inchangés ; feuilles qui tombent ;
 Feu : un incendie laissé brûler par temps sec peut gagner un toit voisin (jamais sous la pluie ou la neige). Un feu sur la halle, la boulangerie ou les champs détruit des vivres. Les habitants ne vont plus boire aux mares de la rivière quand elle est presque à sec.
 
 Équilibrage : supprimer la pluie d'été tuait tout le village dans la démo ; une averse estivale est conservée. La démo de référence atteint toujours toutes les étapes et la pénurie. 69 tests (7 nouveaux), build et lint réussis. Captures : `output/playwright/season-autumn.png`, `season-winter.png`.
+
+### Habitants faméliques et tortue dégradée HD — 18 novembre 2026
+
+Intégration des planches de travail, boisson et repas manquantes ; nouvelles réactions aux coups et poses de combat amaigries. Les découpes respectent les marges réelles. La progression nutritionnelle existante et la compatibilité des sauvegardes sont conservées.
+
+La tortue volcanique utilise quatre nouvelles planches 1536 × 1024 (huit poses), sans filtre de netteté artificielle. Comparaison à taille réelle et cycle inspectés : tête lisible, écailles détaillées, carapace fixe pour les appuis.
+
+Validation : 83 tests dans 20 fichiers, build et lint réussis. Les tests supplémentaires contrôlent la présence et la taille des assets, le choix des animations amaigries pendant repas/combat/coups et le mode de réduction des animations. Preuves : `output/playwright/nutrition-progression.png`, `gaunt-reactions.png`, `ruined-turtle-hd-comparison.png`, `ruined-turtle-hd-poses.png`.
+
+Contrôle indépendant : la planche de combat dédiée présentait un fond semi-transparent, confirmé dans le navigateur. Deux essais de détourage génératif n'ont pas corrigé l'alpha ; cette planche a été retirée. Le combat des habitants amaigris utilise désormais les quatre poses propres de recul et de rétablissement de la planche de réactions. Après ce changement : 83 tests, build et lint réussis à nouveau.
+
+Note finale de l'agent indépendant : **9/10**. Cohérence de l'amaigrissement et de ses actions confirmée, fond de combat éliminé, tortue HD lisible et carapace stable. Limite assumée : combat famélique défensif, sans nouveau cycle de frappes.
+
+### Quatre stades de tortue — 18 novembre 2026
+
+Ajout du stade desséché et du stade final mort-vivant : seize nouvelles poses HD, en huit planches 1536 × 1024. Seuils de dégradation : 0,22 / 0,48 / 0,78. Repli vers un stade antérieur chargé, sans modifier les sauvegardes. Carapace fixe et nage conservées.
+
+84 tests, build et lint réussis. Vérification indépendante : **9/10**, distinction des quatre stades, transparence, huit poses par stade, appuis et raccord de la tête osseuse validés. Comparaison : `output/playwright/turtle-four-stages-review.png`. Prompts et références : `docs/turtle-decay-assets.md`.
+
+### Éléphants assortis aux quatre tortues — 18 novembre 2026
+
+Trois nouvelles planches de huit poses : desséché, volcanique, mort-vivant. Stade commun à la tortue et aux quatre éléphants, repli de chargement commun, animations individuelles et appuis conservés. 84 tests, build et lint réussis. Agent indépendant : **9/10**, styles synchronisés, gestes et marges transparentes propres. Comparaison : `output/playwright/carriers-four-stages-review.png`. Provenance et prompts : `docs/elephant-decay-assets.md`.
+
+### Couche terrestre assortie aux porteurs — 19 novembre 2026
+
+Six nouveaux assets : falaises et matériaux de surface aux stades desséché, volcanique et dévasté. Le stade affiché de la fondation pilote le sol, les chemins et le lit de rivière. Géométrie des raccords et appuis conservée ; chargement avec repli vers les textures disponibles. Prompts et provenance : `docs/earth-decay-assets.md`.
+
+85 tests réussis, build et lint validés. Vérification indépendante : **9/10**. Raccords isométriques continus, marges transparentes, appuis conservés et chemins perceptibles au stade final. Comparaison : `output/playwright/world-four-stages-review.png`.
+
+### Comptage quotidien et filtres — 19 novembre 2026
+
+Points 1 et 2 de la feuille de route : deltas Codex regroupés par jour UTC, migration des cumuls complets sans doublon/pénalité historique, conservation et signalement des historiques incomplets, filtre projet/conversation appliqué aux compteurs/budget/pression. Sélection conservée en sauvegarde, sans supprimer les événements exclus. Mode session fixe compatible avec une conversation externe sélectionnée.
+
+99 tests / 22 fichiers, build et lint réussis. Agent indépendant : **9/10** après corrections des relevés partiels et cumuls hérités. Validation finale de code/tests ; navigateur local indisponible, aucune validation visuelle revendiquée pour cette passe. Pont redémarré sur 5175 : réponse v2 vérifiée sans afficher de contenu de session (350 relevés, 21 sessions migrables, 7 historiques incomplets au contrôle).
+
+Prochain point : clarifier les compteurs. Entrées/sorties de maisons et animations des portes inscrites après les animations d'actions dans `docs/roadmap.md`.
+
+### Lisibilité des compteurs — 19 novembre 2026
+
+Point 3 : compteur du jour UTC hors cache séparé du budget du jeu ; historique brut cache compris clairement nommé ; explication des catégories actives, du budget adaptatif et de sa référence fixe ; couverture partielle des sous-catégories signalée. Budget affiché recalculé même en pause, fenêtre de pression du scénario fixe explicitée.
+
+Build et lint réussis. Revue indépendante finale : **9/10** sur code et libellés ; pas de contrôle visuel navigateur disponible sur cette passe. Aucun changement moteur ; suite de 99 tests validée au point précédent.

@@ -1565,3 +1565,10 @@ body {
 }
 .demo-nav a { color: inherit; }
 .app:not(.focus) > a.demo-nav { bottom: auto; top: 5rem; }
+
+.token-budget-note {
+  margin-top: 5px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: #c2b89e;
+}
