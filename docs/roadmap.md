@@ -12,6 +12,6 @@
 10. À faire — Déplacements : obstacles, croisements, regroupements et destinations variées.
 11. À faire — Explication des conséquences entre ressources et événements.
 12. Réalisé — Reconstruction : bâtiments, végétation et habitants.
-13. Réalisé — Ambiance sonore évolutive et contrôle du volume.
-14. Réalisé — Performances, chargement des planches et netteté à chaque zoom.
-15. Réalisé — Sauvegardes, restauration et diagnostic des données/assets.
+13. À faire — Ambiance sonore évolutive et contrôle du volume.
+14. À faire — Performances, chargement des planches et netteté à chaque zoom.
+15. À faire — Sauvegardes, restauration et diagnostic des données/assets.
