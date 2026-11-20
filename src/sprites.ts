@@ -1,7 +1,9 @@
+import { YoungResidentAtlases, youthStage } from "./young-residents";
 import { loadPaintedImage } from "./asset-status";
 import { nutritionStage } from "./core/nutrition";
 import { residentAction, residentActionTime } from "./resident-actions";
 import { AnimationAtlas, loopFrame } from "./animation";
+import { ExtraResidentAtlases } from "./extra-residents";
 import type { Villager, World } from "./core/types";
 // Source pixels in the user's original 1536×1024 atlas. Anchors are foot positions,
 // not cell centers: the sheet has irregular spacing and differently sized poses.
@@ -110,13 +112,15 @@ export function residentPose(v: Villager, w: World, time: number) {
   return { frame: poses.idle[direction], mirror: false };
 }
 export const residentSkin = (id: number) =>
-  [2, 3, 1, 0, 1, 0, 3, 2, 3, 0, 1, 2, 1, 0, 3, 0, 1, 0, 1, 0, 1, 2, 3, 2][
+  [2, 4, 1, 0, 1, 5, 3, 2, 3, 4, 1, 2, 1, 5, 3, 0, 1, 4, 1, 0, 1, 5, 3, 2][
     id % 24
   ] ?? 0;
 const detailedActivityAtlas = (path: string) =>
   new AnimationAtlas(path, 6, 4, 0, true, true, undefined, true);
 
 export class ResidentAtlas {
+  extra = new ExtraResidentAtlases();
+  young = new YoungResidentAtlases();
   image: HTMLImageElement;
   activities = {
     bake: detailedActivityAtlas("/assets/residents-bake.png"),
@@ -294,7 +298,10 @@ export class ResidentAtlas {
     y: number,
     scale: number,
   ) {
+    const youth = youthStage(v.age);
+    if (youth) return this.young.draw(youth, ctx, v, w, time, x, y, scale);
     const skin = residentSkin(v.id);
+    if (skin >= 4) return this.extra.draw(ctx, skin, v, w, time, x, y, scale);
     const gaunt = nutritionStage(v) === 2;
     const reactions =
       gaunt && this.gauntReactions.ready ? this.gauntReactions : this.reactions;

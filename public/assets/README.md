@@ -95,3 +95,26 @@ Comparaison : `output/playwright/ruined-turtle-hd-comparison.png`. Cycle : `outp
 Consignes de génération communes : « exactly six consecutive poses, one 3 × 2 grid, identical camera and anchor, finely painted dark fantasy RPG textures, transparent alpha, no scenery or text ». Méduse : « translucent turquoise bell with trailing luminous tendrils; contract the bell then expand it, allowing the tentacles to follow in a wave ». Baleine : « right-facing cosmic humpback, indigo skin with star flecks; raise and lower the tail smoothly while the head stays anchored and the flippers rock ».
 
 Les six méduses ont des phases et des cadences décalées. La baleine relit des poses intermédiaires pour revenir de la queue basse à la queue haute, et inverse son orientation à chaque traversée.
+
+## Deux silhouettes d’habitants — 20 novembre 2026
+
+Les planches `resident-saffron.webp` et `resident-moss.webp` contiennent chacune 96 cellules transparentes de 192 × 192 px, réparties en huit colonnes et douze lignes. Les portraits `resident-saffron-portrait.webp` et `resident-moss-portrait.webp` reprennent les visages des poses debout.
+
+Les illustrations ont été créées avec l’outil intégré ImageGen. La reprise graphique utilise les villageois de `residents-variants.png` comme référence pour le contour brun, les ombres en aplats et les accents ocre. Les poses debout servent de référence pour tous les gestes de chaque silhouette. Les poses faméliques gardent la coiffure, les vêtements et les accessoires, avec un visage creusé, des membres plus fins et des vêtements relâchés. Les poses sont calées à la même hauteur au sol pour limiter les sauts entre les images.
+
+| Cellules à partir de zéro | Poses |
+| --- | --- |
+| 0–7 | Debout puis sept poses de marche |
+| 8–15 | Garde, coup, parade, impacts, repos et effondrement |
+| 16–31 | Cueillette, travail au marteau, boisson et repas |
+| 32–43 | Pétrissage, soins et transport d’eau |
+| 44–47 | Quatre stades de dépouille, jusqu’au squelette |
+| 48–95 | Les mêmes groupes en version famélique |
+
+Consigne d’illustration commune · « Full-body poses from a three-quarter side view, facing right. Warm matte medieval fantasy game painting, consistent face, costume and lighting, generous padding, transparent alpha. » L’habitante au foulard safran a les cheveux gris en chignon et une tunique bordeaux. L’habitant au gilet mousse a la barbe brune et des manches écrues. Pour les activités, chaque ligne illustre quatre instants du même geste. Pour la famine, les planches d’activités servent de référence pour les gestes et les objets, et la planche de marche sert de référence pour l’apparence amaigrie.
+
+## Enfance
+
+Les planches `youth-baby.webp`, `youth-child.webp` et `youth-teen.webp` comptent chacune seize poses dans des cellules de 192 × 192 px. La première ligne contient huit poses de déplacement. La seconde contient six poses de jeu, puis la pose debout ou assise utilisée pour le portrait et la pose de repos.
+
+Référence de dessin pour ImageGen : les silhouettes de `residents-variants.png`, avec leurs contours bruns et leurs ombres peintes. Les trois consignes de mouvement étaient « crawl on hands and knees, play with a wooden rattle », « alternate walking steps, crouch and jump at hopscotch » et « walk, toss a leather ball and catch it ». Chaque portrait provient de la pose neutre du même personnage.

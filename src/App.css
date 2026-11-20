@@ -1535,6 +1535,17 @@ body {
 .portrait-3 {
   background-position: 0 -194.14px;
 }
+.portrait-4,
+.portrait-5 {
+  background-size: cover;
+  background-position: center top;
+}
+.portrait-4 {
+  background-image: url("/assets/resident-saffron-portrait.webp");
+}
+.portrait-5 {
+  background-image: url("/assets/resident-moss-portrait.webp");
+}
 
 /* Focus mode (default): only the world, the zoom tools and the toggle. */
 .app.focus .topbar,
@@ -1656,3 +1667,11 @@ body {
   width: 100%;
   accent-color: #d1b77d;
 }
+
+.portrait-baby, .portrait-child, .portrait-teen {
+  background-size: cover;
+  background-position: center top;
+}
+.portrait-baby { background-image: url("/assets/youth-baby-portrait.webp"); }
+.portrait-child { background-image: url("/assets/youth-child-portrait.webp"); }
+.portrait-teen { background-image: url("/assets/youth-teen-portrait.webp"); }

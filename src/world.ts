@@ -1,5 +1,6 @@
+import { doorStep } from "./core/home-visits";
 import { residentScale } from "./core/population";
-import { indoors } from "./core/shelter";
+import { indoors, needsHomeCare } from "./core/shelter";
 import { drawHouseDoor } from "./house-door";
 import { treePosition } from "./core/local-environment";
 import { drawCritters } from "./critters";
@@ -618,22 +619,19 @@ export class WorldRenderer {
     const hit = this.project(x + width / 2, y + depth / 2, h / 2);
     this.hits.push({ x: hit[0], y: hit[1], id: b.id, kind: "building" });
   }
-  person(v: Villager, w: World, selected: number | null) {
+  person(v: Villager, w: World, selected: number | null, atDoor = false) {
     if (v.dead) {
       const [x, y] = this.project(v.x, v.y);
       const s = this.scale * residentScale(v),
         c = this.ctx;
       const stage = remainsStage(v, w.tick);
       this.ellipse(x, y, 22, 7, "#181c1744");
-      if (
-        !this.remains.draw(
-          c,
-          residentSkin(v.id) * 4 + stage,
-          x,
-          y + 4 * s,
-          40 * s,
-        )
-      ) {
+      const skin = residentSkin(v.id);
+      const drawn =
+        skin >= 4
+          ? this.atlas.extra.drawRemains(c, skin, v, stage, x, y + 4 * s, s)
+          : this.remains.draw(c, skin * 4 + stage, x, y + 4 * s, 40 * s);
+      if (!drawn) {
         // Readable prone remains while the painted sheet loads.
         this.line(
           [
@@ -681,7 +679,7 @@ export class WorldRenderer {
     }
     let x = v.x,
       y = v.y;
-    const previous = this.previousPositions.get(v.id);
+    const previous = atDoor ? undefined : this.previousPositions.get(v.id);
     if (
       previous &&
       !w.settings.reducedMotion &&
@@ -1264,11 +1262,30 @@ export class WorldRenderer {
       });
     }
     for (const v of w.villagers) {
-      if (
-        indoors(v, w) ||
-        (!v.dead && v.visit && v.visit.phase !== "approaching")
-      )
+      if (indoors(v, w)) {
+        // Show infants beside their own doorstep during the day, still under home care.
+        const hour = (8 + w.tick / 12) % 24;
+        if (needsHomeCare(v) && hour >= 9 && hour < 17) {
+          const [x, y] = doorStep(w.buildings[v.home]);
+          const t = (this.time + v.id) % 16;
+          const outward = t < 3;
+          const returning = t >= 10 && t < 13;
+          const offset = Math.min(t / 3, 1, Math.max(0, (13 - t) / 3)) * 0.55;
+          const infant: Villager = {
+            ...v,
+            x: x + offset,
+            y: y + 0.3,
+            target: [x + (returning ? -1 : 1), y + 0.3],
+            action: outward || returning ? "Rampe au seuil" : "Joue au seuil",
+          };
+          objects.push({
+            depth: infant.x + infant.y,
+            draw: () => this.person(infant, w, selected, true),
+          });
+        }
         continue;
+      }
+      if (!v.dead && v.visit && v.visit.phase !== "approaching") continue;
       objects.push({
         depth: v.x + v.y,
         draw: () => this.person(v, w, selected),
@@ -1277,29 +1294,6 @@ export class WorldRenderer {
     objects.sort((a, b) => a.depth - b.depth).forEach((o) => o.draw());
     const farm = this.project(8, 21);
     this.hits.push({ x: farm[0], y: farm[1], id: 9, kind: "building" });
-    // Laundry and small ground details.
-    this.line(
-      [this.project(20, 12, 20), this.project(22, 12, 20)],
-      "#b3aa82",
-      0.8,
-    );
-    for (let i = 0; i < 4; i++)
-      this.shape(
-        [
-          [20 + i * 0.5, 12, 19],
-          [20.35 + i * 0.5, 12, 19],
-          [20.35 + i * 0.5, 12, 10],
-          [20 + i * 0.5, 12, 10],
-        ],
-        ["#c4c1a1", "#839180", "#c1aa89", "#a4b0a1"][i],
-      );
-    for (let i = 0; i < 14; i++) {
-      const x = 6 + noise(i, 12) * 18,
-        y = 5 + noise(i, 13) * 18;
-      if (w.buildings.some((b) => Math.hypot(x - b.x, y - b.y) < 2)) continue;
-      const [a, b] = this.project(x, y);
-      this.ellipse(a, b, 3, 2, "#a8a68a");
-    }
     if (!w.settings.reducedMotion) {
       // Subtle moving cloud shadows and birds, never opaque over the town.
       const cloud = ((this.time * 8) % (this.width + 500)) - 250;
