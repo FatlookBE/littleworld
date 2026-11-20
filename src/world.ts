@@ -625,15 +625,12 @@ export class WorldRenderer {
         c = this.ctx;
       const stage = remainsStage(v, w.tick);
       this.ellipse(x, y, 22, 7, "#181c1744");
-      if (
-        !this.remains.draw(
-          c,
-          residentSkin(v.id) * 4 + stage,
-          x,
-          y + 4 * s,
-          40 * s,
-        )
-      ) {
+      const skin = residentSkin(v.id);
+      const drawn =
+        skin >= 4
+          ? this.atlas.extra.drawRemains(c, skin, v, stage, x, y + 4 * s, s)
+          : this.remains.draw(c, skin * 4 + stage, x, y + 4 * s, 40 * s);
+      if (!drawn) {
         // Readable prone remains while the painted sheet loads.
         this.line(
           [
