@@ -1,6 +1,7 @@
 import { loadPaintedImage } from "./asset-status";
 import { localHealth, plotPosition } from "./core/local-environment";
 import { paintDecayTransition, type DecayTransition } from "./decay-transition";
+import { paintedRiverbed } from "./riverbed";
 import { drawRiver } from "./water";
 import { autumnColour, snowCover } from "./core/seasons";
 import type { World } from "./core/types";
@@ -13,6 +14,7 @@ export class PaintedTerrain {
     HTMLCanvasElement,
     Map<number, CanvasPattern>
   >();
+  private readonly riverbeds = new WeakMap<HTMLCanvasElement, HTMLCanvasElement>();
   private plotPaths?: Path2D[];
   private stageMaterials: HTMLCanvasElement[][] = [this.materials];
   constructor() {
@@ -142,47 +144,12 @@ export class PaintedTerrain {
       ctx.globalCompositeOperation = "source-over";
     }
     ctx.globalAlpha = 1;
-    const river = new Path2D();
-    for (let y = -1; y <= 30; y += 0.2) {
-      const x = 3.7 + Math.sin(y * 0.24) * 1.6;
-      if (y === -1) river.moveTo(x, y);
-      else river.lineTo(x, y);
+    let bed = this.riverbeds.get(materials[1]);
+    if (!bed) {
+      bed = paintedRiverbed(materials[1]);
+      this.riverbeds.set(materials[1], bed);
     }
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-    // Soft, grassy-to-silt banks instead of a ruled border.
-    for (const [width, colour] of [
-      [4.4, "#3f3a2618"],
-      [4.0, "#5a503330"],
-      [3.7, "#6a5c3c50"],
-    ] as const) {
-      ctx.strokeStyle = colour;
-      ctx.lineWidth = width;
-      ctx.stroke(river);
-    }
-    ctx.strokeStyle = material(1, 5);
-    ctx.lineWidth = 3.35;
-    ctx.stroke(river);
-    // The deeper bed stays darker once uncovered, fading up the banks.
-    ctx.strokeStyle = "#4a3c291c";
-    for (const width of [3.2, 2.8, 2.4, 2.0]) {
-      ctx.lineWidth = width;
-      ctx.stroke(river);
-    }
-    // Exposed silt and branching cracks remain as the water retreats.
-    for (let y = 0.3; y < 29; y += 0.65) {
-      const x = 3.7 + Math.sin(y * 0.24) * 1.6;
-      ctx.strokeStyle = "#59473588";
-      ctx.lineWidth = 0.035;
-      ctx.beginPath();
-      ctx.moveTo(x - 1.4, y - 0.2);
-      ctx.lineTo(x - 0.7, y + 0.08);
-      ctx.lineTo(x + 0.2, y - 0.12);
-      ctx.lineTo(x + 1.4, y + 0.25);
-      ctx.moveTo(x - 0.7, y + 0.08);
-      ctx.lineTo(x - 0.45, y + 0.43);
-      ctx.stroke();
-    }
+    ctx.drawImage(bed, 0, 0, 9, 29);
     const snowLayer = (alpha: number, paint: () => void) => {
       ctx.save();
       ctx.filter = "grayscale(1) brightness(2.1) contrast(0.7)";
