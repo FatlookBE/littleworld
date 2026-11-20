@@ -225,9 +225,16 @@ export function drawRiver(
       const side = i % 2 ? 1 : -1;
       ctx.globalAlpha = frost * (0.26 + hash(i, 46) * 0.4);
       ctx.beginPath();
-      ctx.ellipse(riverCenter(y) + side * h, y,
-        (0.08 + hash(i, 47) * 0.24) * frost, 0.15 + hash(i, 48) * 0.48,
-        0, 0, Math.PI * 2);
+      const span = 0.15 + hash(i, 48) * 0.48;
+      for (let k = 0; k <= 6; k++) {
+        const py = y + span * (k / 3 - 1);
+        const depth = Math.sin(k * Math.PI / 6) * frost * (0.05 + 0.22 * hash(i * 7 + k, 47));
+        const x = riverCenter(py) + side * (waterHalfWidth(level, py) - depth);
+        if (k) ctx.lineTo(x, py);
+        else ctx.moveTo(x, py);
+      }
+      ctx.lineTo(riverCenter(y) + side * (h + 0.24), y);
+      ctx.closePath();
       ctx.fill();
     }
   }
