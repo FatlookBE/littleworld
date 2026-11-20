@@ -1,5 +1,6 @@
+import { doorStep } from "./core/home-visits";
 import { residentScale } from "./core/population";
-import { indoors } from "./core/shelter";
+import { indoors, needsHomeCare } from "./core/shelter";
 import { drawHouseDoor } from "./house-door";
 import { treePosition } from "./core/local-environment";
 import { drawCritters } from "./critters";
@@ -618,7 +619,7 @@ export class WorldRenderer {
     const hit = this.project(x + width / 2, y + depth / 2, h / 2);
     this.hits.push({ x: hit[0], y: hit[1], id: b.id, kind: "building" });
   }
-  person(v: Villager, w: World, selected: number | null) {
+  person(v: Villager, w: World, selected: number | null, atDoor = false) {
     if (v.dead) {
       const [x, y] = this.project(v.x, v.y);
       const s = this.scale * residentScale(v),
@@ -678,7 +679,7 @@ export class WorldRenderer {
     }
     let x = v.x,
       y = v.y;
-    const previous = this.previousPositions.get(v.id);
+    const previous = atDoor ? undefined : this.previousPositions.get(v.id);
     if (
       previous &&
       !w.settings.reducedMotion &&
@@ -1261,11 +1262,30 @@ export class WorldRenderer {
       });
     }
     for (const v of w.villagers) {
-      if (
-        indoors(v, w) ||
-        (!v.dead && v.visit && v.visit.phase !== "approaching")
-      )
+      if (indoors(v, w)) {
+        // Show infants beside their own doorstep during the day, still under home care.
+        const hour = (8 + w.tick / 12) % 24;
+        if (needsHomeCare(v) && hour >= 9 && hour < 17) {
+          const [x, y] = doorStep(w.buildings[v.home]);
+          const t = (this.time + v.id) % 16;
+          const outward = t < 3;
+          const returning = t >= 10 && t < 13;
+          const offset = Math.min(t / 3, 1, Math.max(0, (13 - t) / 3)) * 0.55;
+          const infant: Villager = {
+            ...v,
+            x: x + offset,
+            y: y + 0.3,
+            target: [x + (returning ? -1 : 1), y + 0.3],
+            action: outward || returning ? "Rampe au seuil" : "Joue au seuil",
+          };
+          objects.push({
+            depth: infant.x + infant.y,
+            draw: () => this.person(infant, w, selected, true),
+          });
+        }
         continue;
+      }
+      if (!v.dead && v.visit && v.visit.phase !== "approaching") continue;
       objects.push({
         depth: v.x + v.y,
         draw: () => this.person(v, w, selected),

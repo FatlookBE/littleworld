@@ -1,3 +1,4 @@
+import { youthStage } from "./young-residents";
 import { villageCapacity } from "./core/population";
 import { LocalDiagnostics } from "./LocalDiagnostics";
 import { VillageAudioSettings } from "./VillageAudioSettings";
@@ -753,7 +754,7 @@ function App() {
             <>
               <div className="person-heading">
                 <span
-                  className={`portrait portrait-${residentSkin(person.id)}`}
+                  className={`portrait portrait-${youthStage(person.age) ?? residentSkin(person.id)}`}
                   aria-hidden="true"
                 />
                 <div>

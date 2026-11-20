@@ -112,3 +112,9 @@ Les illustrations ont été créées avec l’outil intégré ImageGen. La repri
 | 48–95 | Les mêmes groupes en version famélique |
 
 Consigne d’illustration commune · « Full-body poses from a three-quarter side view, facing right. Warm matte medieval fantasy game painting, consistent face, costume and lighting, generous padding, transparent alpha. » L’habitante au foulard safran a les cheveux gris en chignon et une tunique bordeaux. L’habitant au gilet mousse a la barbe brune et des manches écrues. Pour les activités, chaque ligne illustre quatre instants du même geste. Pour la famine, les planches d’activités servent de référence pour les gestes et les objets, et la planche de marche sert de référence pour l’apparence amaigrie.
+
+## Enfance
+
+Les planches `youth-baby.webp`, `youth-child.webp` et `youth-teen.webp` comptent chacune seize poses dans des cellules de 192 × 192 px. La première ligne contient huit poses de déplacement. La seconde contient six poses de jeu, puis la pose debout ou assise utilisée pour le portrait et la pose de repos.
+
+Référence de dessin pour ImageGen : les silhouettes de `residents-variants.png`, avec leurs contours bruns et leurs ombres peintes. Les trois consignes de mouvement étaient « crawl on hands and knees, play with a wooden rattle », « alternate walking steps, crouch and jump at hopscotch » et « walk, toss a leather ball and catch it ». Chaque portrait provient de la pose neutre du même personnage.

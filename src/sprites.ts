@@ -1,3 +1,4 @@
+import { YoungResidentAtlases, youthStage } from "./young-residents";
 import { loadPaintedImage } from "./asset-status";
 import { nutritionStage } from "./core/nutrition";
 import { residentAction, residentActionTime } from "./resident-actions";
@@ -119,6 +120,7 @@ const detailedActivityAtlas = (path: string) =>
 
 export class ResidentAtlas {
   extra = new ExtraResidentAtlases();
+  young = new YoungResidentAtlases();
   image: HTMLImageElement;
   activities = {
     bake: detailedActivityAtlas("/assets/residents-bake.png"),
@@ -296,6 +298,8 @@ export class ResidentAtlas {
     y: number,
     scale: number,
   ) {
+    const youth = youthStage(v.age);
+    if (youth) return this.young.draw(youth, ctx, v, w, time, x, y, scale);
     const skin = residentSkin(v.id);
     if (skin >= 4) return this.extra.draw(ctx, skin, v, w, time, x, y, scale);
     const gaunt = nutritionStage(v) === 2;

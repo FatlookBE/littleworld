@@ -1667,3 +1667,11 @@ body {
   width: 100%;
   accent-color: #d1b77d;
 }
+
+.portrait-baby, .portrait-child, .portrait-teen {
+  background-size: cover;
+  background-position: center top;
+}
+.portrait-baby { background-image: url("/assets/youth-baby-portrait.webp"); }
+.portrait-child { background-image: url("/assets/youth-child-portrait.webp"); }
+.portrait-teen { background-image: url("/assets/youth-teen-portrait.webp"); }
