@@ -1274,29 +1274,6 @@ export class WorldRenderer {
     objects.sort((a, b) => a.depth - b.depth).forEach((o) => o.draw());
     const farm = this.project(8, 21);
     this.hits.push({ x: farm[0], y: farm[1], id: 9, kind: "building" });
-    // Laundry and small ground details.
-    this.line(
-      [this.project(20, 12, 20), this.project(22, 12, 20)],
-      "#b3aa82",
-      0.8,
-    );
-    for (let i = 0; i < 4; i++)
-      this.shape(
-        [
-          [20 + i * 0.5, 12, 19],
-          [20.35 + i * 0.5, 12, 19],
-          [20.35 + i * 0.5, 12, 10],
-          [20 + i * 0.5, 12, 10],
-        ],
-        ["#c4c1a1", "#839180", "#c1aa89", "#a4b0a1"][i],
-      );
-    for (let i = 0; i < 14; i++) {
-      const x = 6 + noise(i, 12) * 18,
-        y = 5 + noise(i, 13) * 18;
-      if (w.buildings.some((b) => Math.hypot(x - b.x, y - b.y) < 2)) continue;
-      const [a, b] = this.project(x, y);
-      this.ellipse(a, b, 3, 2, "#a8a68a");
-    }
     if (!w.settings.reducedMotion) {
       // Subtle moving cloud shadows and birds, never opaque over the town.
       const cloud = ((this.time * 8) % (this.width + 500)) - 250;
