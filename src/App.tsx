@@ -111,6 +111,15 @@ function CauseList({
     </section>
   );
 }
+function tokenSourceLabel(events: ReturnType<typeof selectedUsage>) {
+  const sources = new Set(events.map((event) => event.provenance));
+  if (!sources.size) return "Aucun relevé";
+  if (sources.size > 1) return "Sources mixtes";
+  if (sources.has("measured")) return "Tokens mesurés";
+  if (sources.has("estimated")) return "Tokens estimés";
+  return "Tokens simulés";
+}
+
 function App() {
   const [view, setView] = useState<World>(() => createWorld());
   const world = useRef<World>(view),
@@ -353,13 +362,10 @@ function App() {
     ]
       .filter(Boolean)
       .join(" + ") || "aucune catégorie activée";
-  const provenance = [...new Set(selectedUsage(w).map((e) => e.provenance))];
-  const badge =
-    provenance.length === 0 || provenance.every((p) => p === "demo")
-      ? "DÉMO"
-      : provenance.length === 1 && provenance[0] === "measured"
-        ? "MESURÉ · IMPORT"
-        : "DONNÉES MIXTES";
+  const usage = selectedUsage(w);
+  const todaySource = tokenSourceLabel(
+    usage.filter((event) => event.at.slice(0, 10) === w.day),
+  );
   const choose = (s: Selection) => {
     interaction.current = performance.now();
     setSelected(s);
@@ -557,7 +563,7 @@ function App() {
       </aside>
       {ready && (
         <a className="demo-nav" href="?demo=village">
-          Jouer la démo
+          Voir la démo simulée
         </a>
       )}
       <div className="view-tools">
@@ -601,7 +607,7 @@ function App() {
         aria-label="État des réserves et de la consommation"
       >
         <div className="token-count">
-          <span>AUJOURD’HUI · UTC · HORS CACHE</span>
+          <span>{todaySource} · aujourd’hui (UTC) · hors cache</span>
           <strong>{fmt(todayTokens)}</strong>
           <div className="token-budget-note">
             Budget du jeu : {fmt(displayedBudget)}
@@ -611,10 +617,10 @@ function App() {
           className="pressure-stat pressure-explain"
           onClick={() => toggle("about")}
           aria-expanded={panel === "about"}
-          aria-label={`Comprendre l’état du village : pression fictive ${Math.round(w.pressure)} %`}
+          aria-label={`Comprendre l’état du village : pression du jeu ${Math.round(w.pressure)} %`}
         >
           <span>
-            PRESSION FICTIVE <b>{Math.round(w.pressure)}%</b>
+            PRESSION DU JEU <b>{Math.round(w.pressure)}%</b>
           </span>
           <span className="pressure-track" aria-hidden="true">
             <span style={{ width: `${w.pressure}%` }} />
@@ -929,13 +935,11 @@ function App() {
                 causes={villageCauses(w)}
               />
               <p>
-                Tokenfall est une fiction environnementale. Les tokens font
-                évoluer un petit monde selon un budget et des seuils que vous
-                choisissez.
+                Le jeu utilise les tokens de la source sélectionnée pour calculer la pression du village.
+                Le budget et les seuils se règlent dans les paramètres.
               </p>
               <blockquote>
-                La pression du village n’est une mesure ni de l’eau consommée,
-                ni de l’énergie, ni du carbone.
+                La pression, la sécheresse et les incendies sont simulés dans le jeu.
               </blockquote>
               <h3>De l’usage aux histoires</h3>
               <p>
@@ -1136,7 +1140,7 @@ function App() {
                 Données & sauvegardes <span>↗</span>
               </button>
               <button className="danger-link" onClick={() => setReset(true)}>
-                Recommencer la démonstration…
+                Recommencer mon village…
               </button>
               <p className="fine-print">
                 {w.snapshots.length} instantané(s) de session conservé(s).{" "}
@@ -1327,21 +1331,16 @@ function App() {
                 toutes dates confondues. Ce total brut peut être beaucoup plus
                 élevé que le compteur du jour.
               </p>
-              <div className="source-badge">{badge}</div>
-              <p>
-                {badge === "DÉMO"
-                  ? "Les tokens affichés sont simulés. Aucune connexion automatique à votre conversation Codex."
-                  : "Les imports mesurés concernent uniquement les exécutions présentes dans les fichiers. La démo est comptée séparément."}
-              </p>
+              <div className="source-badge">{tokenSourceLabel(usage)}</div>
               <div className="accounting">
                 {(["demo", "measured", "estimated"] as const).map((p) => (
                   <div key={p}>
                     <span>
                       {p === "demo"
-                        ? "Démonstration"
+                        ? "Tokens simulés"
                         : p === "measured"
-                          ? "Mesuré, importé"
-                          : "Estimé"}
+                          ? "Tokens mesurés et importés"
+                          : "Tokens estimés"}
                     </span>
                     <b>
                       {fmt(
@@ -1354,7 +1353,7 @@ function App() {
                 ))}
               </div>
 
-              <a href="?demo=village">Jouer la démo</a>
+              <a href="?demo=village">Voir la démo simulée</a>
               <h3>Détail de l’historique sélectionné</h3>
               <div
                 className="accounting"
@@ -1424,7 +1423,7 @@ function App() {
                       new DemoAdapter().event(world.current, 10000),
                     );
                     update();
-                    announce("10 000 tokens de démonstration ajoutés.");
+                    announce("10 000 tokens simulés ajoutés.");
                   } catch (error) {
                     announce(
                       error instanceof Error
@@ -1434,7 +1433,7 @@ function App() {
                   }
                 }}
               >
-                Ajouter 10 000 tokens démo <span>+</span>
+                Ajouter 10 000 tokens simulés <span>+</span>
               </button>
               <button
                 className="full-button"
@@ -1519,10 +1518,10 @@ function App() {
           aria-labelledby="reset-title"
           className="confirm"
         >
-          <h2 id="reset-title">Une autre histoire ?</h2>
+          <h2 id="reset-title">Recommencer au jour 1 ?</h2>
           <p>
-            Le village actuel, ses habitants et ses usages seront remplacés.
-            Exportez-le d’abord pour garder ses souvenirs.
+            Votre sauvegarde sera remplacée par un village de 24 habitants au jour 1.
+            Si le pont local est connecté, vos relevés de tokens seront de nouveau importés.
           </p>
           <button
             className="full-button"
@@ -1533,7 +1532,7 @@ function App() {
               )
             }
           >
-            Exporter avant de recommencer ↓
+            Exporter mon village actuel ↓
           </button>
           <div>
             <button autoFocus onClick={() => setReset(false)}>

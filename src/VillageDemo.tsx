@@ -75,13 +75,13 @@ export default function VillageDemo() {
       />
       <nav className="demo-nav" aria-label="Commandes de la démo">
         <span>
-          {monsterPreview ? "Monstres" : "Démo"} · Pression {pressure} %
+          Démo simulée{monsterPreview ? " · Monstres" : ""} · Pression {pressure} %
         </span>
         {!monsterPreview && (
           <a href="?demo=village&vue=monstres">Voir les monstres</a>
         )}
-        <button onClick={() => setRun(run + 1)}>Rejouer</button>
-        <a href="./">Mon village</a>
+        <button onClick={() => setRun(run + 1)}>Rejouer la démo</button>
+        <a href="./">Retour à mon village</a>
       </nav>
     </main>
   );
