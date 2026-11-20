@@ -98,9 +98,9 @@ Les six méduses ont des phases et des cadences décalées. La baleine relit des
 
 ## Deux silhouettes d’habitants — 20 novembre 2026
 
-Les planches `resident-saffron.webp` et `resident-moss.webp` contiennent chacune 96 cellules transparentes de 160 × 160 px, réparties en huit colonnes et douze lignes. Les portraits `resident-saffron-portrait.webp` et `resident-moss-portrait.webp` reprennent les visages des poses debout.
+Les planches `resident-saffron.webp` et `resident-moss.webp` contiennent chacune 96 cellules transparentes de 192 × 192 px, réparties en huit colonnes et douze lignes. Les portraits `resident-saffron-portrait.webp` et `resident-moss-portrait.webp` reprennent les visages des poses debout.
 
-Les illustrations ont été créées avec l’outil intégré ImageGen. Les poses debout servent de référence pour tous les gestes de chaque silhouette. Les poses faméliques gardent la coiffure, les vêtements et les accessoires, avec un visage creusé, des membres plus fins et des vêtements relâchés. Les poses sont calées à la même hauteur au sol pour limiter les sauts entre les images.
+Les illustrations ont été créées avec l’outil intégré ImageGen. La reprise graphique utilise les villageois de `residents-variants.png` comme référence pour le contour brun, les ombres en aplats et les accents ocre. Les poses debout servent de référence pour tous les gestes de chaque silhouette. Les poses faméliques gardent la coiffure, les vêtements et les accessoires, avec un visage creusé, des membres plus fins et des vêtements relâchés. Les poses sont calées à la même hauteur au sol pour limiter les sauts entre les images.
 
 | Cellules à partir de zéro | Poses |
 | --- | --- |
