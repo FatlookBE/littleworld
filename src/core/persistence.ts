@@ -1,3 +1,4 @@
+import { cropRows } from "./crops";
 import { residentRecordLimit, villageCapacity } from "./population";
 import type { World } from "./types";
 import { validateEvent } from "./telemetry";
@@ -29,6 +30,13 @@ export function restore(text: string): World {
   w.usage = w.usage.map(validateEvent);
   const finite = (n: unknown, lo = 0, hi = 100): n is number =>
     typeof n === "number" && Number.isFinite(n) && n >= lo && n <= hi;
+  if (
+    w.cropGrowth !== undefined &&
+    (!Array.isArray(w.cropGrowth) ||
+      w.cropGrowth.length !== cropRows ||
+      !w.cropGrowth.every((value) => finite(value, 0, 1)))
+  )
+    throw Error("Croissance des cultures invalide.");
   if (w.localEnvironment !== undefined) {
     const local = w.localEnvironment;
     if (

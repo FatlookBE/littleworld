@@ -126,3 +126,7 @@ La planche transparente `swallow-flight.webp` contient huit poses d’hirondelle
 ## Poules de la ferme
 
 `farm-hens.webp` rassemble trois plumages dans une grille de quatre colonnes et six lignes. Chaque variété a une ligne de marche et une ligne de picorage. Les trois séries sont peintes avec ImageGen, suivant la consigne « four alternating walking poses, four pecking poses, warm cel-painted feathers, dark brown ink outlines, facing right ». La rousse sert de référence pour la Sussex à collerette noire et pour la poule Soie à huppe et pattes emplumées.
+
+## Cultures
+
+`farm-crops.webp` regroupe le blé, les choux et les carottes, à quatre stades de croissance chacun. Les cellules transparentes de 160 × 160 px ont une ligne de sol commune. Consigne ImageGen : « isolated medieval kitchen garden plant clumps, four stages growing left to right from tiny shoots to ripe wheat ears, full cabbage head and feathery carrot tops; three-quarter isometric view, warm ochre highlights and fine ink edges ».
