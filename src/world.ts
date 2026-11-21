@@ -104,6 +104,7 @@ export class WorldRenderer {
   /** Rot derived from simulation state: stable in pause and after reload. */
   decay = 0;
   hits: Hit[] = [];
+  private farmHit?: Hit;
   width = 0;
   height = 0;
   scale = 1;
@@ -1286,8 +1287,10 @@ export class WorldRenderer {
     for (let i = 0; i < 135; i++) {
       const [x, y] = treePosition(i);
       const nearCrops =
-        x >= field.x - 1.5 && x <= field.x + field.width + 1.5 &&
-        y >= field.y - 1.5 && y <= field.y + field.height + 1.5;
+        x >= field.x - 1.5 &&
+        x <= field.x + field.width + 1.5 &&
+        y >= field.y - 1.5 &&
+        y <= field.y + field.height + 1.5;
       if (
         nearCrops ||
         Math.abs(x - riverX(y)) < 2.4 ||
@@ -1344,7 +1347,13 @@ export class WorldRenderer {
       field.x + field.width / 2,
       field.y + field.height / 2,
     );
-    this.hits.push({ x: farm[0], y: farm[1], id: 9, kind: "building" });
+    const farmBuilding = w.buildings.find((b) => b.type === "farm");
+    this.farmHit = farmBuilding && {
+      x: farm[0],
+      y: farm[1],
+      id: farmBuilding.id,
+      kind: "building",
+    };
     if (!w.settings.reducedMotion) {
       // Subtle moving cloud shadows and birds, never opaque over the town.
       const cloud = ((this.time * 8) % (this.width + 500)) - 250;
@@ -1829,7 +1838,7 @@ export class WorldRenderer {
     c.globalAlpha = 1;
   }
   hit(x: number, y: number): Hit | undefined {
-    return (
+    const foreground =
       [...this.hits]
         .reverse()
         .filter((h) => h.kind === "person")
@@ -1851,7 +1860,17 @@ export class WorldRenderer {
               y >= h.bounds.top &&
               y <= h.bounds.bottom
             : Math.hypot(h.x - x, h.y - y) < 28 * this.scale,
-        )
-    );
+        );
+    if (foreground || !this.farmHit) return foreground;
+    // Resolve the click along the two projected ground axes, relative to the field centre.
+    const [originX, originY] = this.project(0, 0);
+    const [tileX, tileY] = this.project(1, 0);
+    const across = (x - this.farmHit.x) / (tileX - originX);
+    const down = (y - this.farmHit.y) / (tileY - originY);
+    if (
+      Math.abs(down + across) <= field.width &&
+      Math.abs(down - across) <= field.height
+    )
+      return this.farmHit;
   }
 }
