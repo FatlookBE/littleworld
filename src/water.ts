@@ -88,17 +88,10 @@ export function drawRiver(
     ctx.globalAlpha = 0.5 * clamp01((wet - level) / 6);
     ctx.fillStyle = "#3a3021";
     ctx.fill(damp);
-    ctx.strokeStyle = "#2b2418";
-    ctx.lineWidth = 0.06;
-    ctx.stroke(damp);
     ctx.globalAlpha = 1;
   }
   if (level <= 0.05) return;
   const water = channel(level);
-  ctx.strokeStyle = "#3b3423b0";
-  ctx.lineWidth = 0.18;
-  ctx.lineJoin = "round";
-  ctx.stroke(water);
   ctx.save();
   ctx.clip(water);
   ctx.fillStyle = "#2a6266";
@@ -140,15 +133,27 @@ export function drawRiver(
     ctx.lineWidth = width * a;
     ctx.stroke(center);
   }
-  // Shallow, lighter margins and a lapping foam line along both banks.
-  ctx.globalAlpha = 0.4;
-  ctx.strokeStyle = "#86bba6";
-  ctx.lineWidth = 0.62;
+  // A translucent shallows tint gives way to short ripples where the banks turn.
+  ctx.globalAlpha = 0.22;
+  ctx.strokeStyle = "#91aa83";
+  ctx.lineWidth = 0.35 * a;
   ctx.stroke(water);
-  ctx.globalAlpha = 0.38 + 0.14 * Math.sin(time * 1.6);
-  ctx.strokeStyle = "#d9e6cc";
-  ctx.lineWidth = 0.17;
-  ctx.stroke(water);
+  ctx.lineWidth = 0.045;
+  ctx.strokeStyle = "#c5cfb5";
+  for (let i = 0; i < 45; i++) {
+    const start = hash(i, 71) * 29;
+    const side = i % 2 ? 1 : -1;
+    if (waterHalfWidth(level, start) < 0.22) continue;
+    ctx.globalAlpha = (0.13 + 0.09 * Math.sin(time + i)) * a;
+    ctx.beginPath();
+    for (let k = 0; k <= 4; k++) {
+      const y = start + k * (0.05 + hash(i, 37) * 0.09);
+      const x = riverCenter(y) + side * (waterHalfWidth(level, y) - 0.09);
+      if (k) ctx.lineTo(x, y);
+      else ctx.moveTo(x, y);
+    }
+    ctx.stroke();
+  }
   // Current lines follow the bed and run faster as they near the brink.
   ctx.strokeStyle = "#dbe9d8";
   ctx.lineWidth = 0.04;
@@ -213,14 +218,25 @@ export function drawRiver(
   }
   // Thin ice creeps out from both banks in winter.
   if (frost > 0) {
-    ctx.globalAlpha = 0.75 * frost;
-    ctx.strokeStyle = "#e4eeee";
-    ctx.lineWidth = 0.55 * frost;
-    ctx.stroke(water);
-    ctx.globalAlpha = 0.5 * frost;
-    ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 0.12;
-    ctx.stroke(water);
+    ctx.fillStyle = "#d0dfd9";
+    for (let i = 0; i < 84; i++) {
+      const y = hash(i, 45) * 29, h = waterHalfWidth(level, y);
+      if (h < 0.14) continue;
+      const side = i % 2 ? 1 : -1;
+      ctx.globalAlpha = frost * (0.26 + hash(i, 46) * 0.4);
+      ctx.beginPath();
+      const span = 0.15 + hash(i, 48) * 0.48;
+      for (let k = 0; k <= 6; k++) {
+        const py = y + span * (k / 3 - 1);
+        const depth = Math.sin(k * Math.PI / 6) * frost * (0.05 + 0.22 * hash(i * 7 + k, 47));
+        const x = riverCenter(py) + side * (waterHalfWidth(level, py) - depth);
+        if (k) ctx.lineTo(x, py);
+        else ctx.moveTo(x, py);
+      }
+      ctx.lineTo(riverCenter(y) + side * (h + 0.24), y);
+      ctx.closePath();
+      ctx.fill();
+    }
   }
   // Sun glints that come and go on the surface.
   ctx.fillStyle = "#f6f1d8";
