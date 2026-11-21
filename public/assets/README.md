@@ -118,3 +118,7 @@ Consigne d’illustration commune · « Full-body poses from a three-quarter sid
 Les planches `youth-baby.webp`, `youth-child.webp` et `youth-teen.webp` comptent chacune seize poses dans des cellules de 192 × 192 px. La première ligne contient huit poses de déplacement. La seconde contient six poses de jeu, puis la pose debout ou assise utilisée pour le portrait et la pose de repos.
 
 Référence de dessin pour ImageGen : les silhouettes de `residents-variants.png`, avec leurs contours bruns et leurs ombres peintes. Les trois consignes de mouvement étaient « crawl on hands and knees, play with a wooden rattle », « alternate walking steps, crouch and jump at hopscotch » et « walk, toss a leather ball and catch it ». Chaque portrait provient de la pose neutre du même personnage.
+
+## Hirondelles
+
+La planche transparente `swallow-flight.webp` contient huit poses d’hirondelle rustique en vol, en quatre colonnes et deux lignes. Consigne ImageGen : « Barn swallow flying right, forked tail, blue back, rusty red throat, warm cream breast, warm painted medieval RPG shading and brown ink contours. Eight successive articulated wingbeat poses, body and beak anchored in place. » La troisième pose sert au vol plané.
