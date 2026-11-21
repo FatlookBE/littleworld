@@ -1,5 +1,6 @@
+import { cropRows, cropRowY } from "./core/crops";
 import { loadPaintedImage } from "./asset-status";
-import { localHealth, plotPosition } from "./core/local-environment";
+import { plotPosition } from "./core/local-environment";
 import { paintDecayTransition, type DecayTransition } from "./decay-transition";
 import { paintedRiverbed } from "./riverbed";
 import { drawRiver } from "./water";
@@ -205,29 +206,13 @@ export class PaintedTerrain {
     ctx.stroke(road);
     ctx.fillStyle = material(1, 5);
     ctx.fillRect(5, 19, 6, 5);
-    for (let row = 0; row < 9; row++) {
+    for (let row = 0; row < cropRows; row++) {
       ctx.strokeStyle = "#4f3b2799";
       ctx.lineWidth = 0.08;
       ctx.beginPath();
-      ctx.moveTo(5.2, 19.3 + row * 0.53);
-      ctx.lineTo(10.8, 19.3 + row * 0.53);
+      ctx.moveTo(5.2, cropRowY(row));
+      ctx.lineTo(10.8, cropRowY(row));
       ctx.stroke();
-      for (let col = 0; col < 14; col++) {
-        const x = 5.3 + col * 0.4,
-          y = 19.3 + row * 0.53;
-        ctx.strokeStyle =
-          stage >= 2
-            ? "#65574d"
-            : localHealth(w, x, y) > 40 && stage === 0
-              ? "#76813f"
-              : "#9d8046";
-        ctx.lineWidth = 0.1;
-        ctx.beginPath();
-        ctx.moveTo(x - 0.1, y + 0.08);
-        ctx.lineTo(x, y - 0.18);
-        ctx.lineTo(x + 0.12, y + 0.02);
-        ctx.stroke();
-      }
     }
     if (snow > 0) {
       // Trodden paths stay partly visible; the field disappears under snow.

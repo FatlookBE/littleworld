@@ -1,8 +1,10 @@
+import { cropRows, cropRowY, initialGrowth } from "./core/crops";
 import { doorStep } from "./core/home-visits";
 import { residentScale } from "./core/population";
 import { indoors, needsHomeCare } from "./core/shelter";
 import { drawHouseDoor } from "./house-door";
 import { treePosition } from "./core/local-environment";
+import { foragingHens } from "./hens";
 import { drawSwallows } from "./swallows";
 import { drawCritters } from "./critters";
 import { bridgeRows, riverCenter, riverHalfWidth } from "./core/navigation";
@@ -49,6 +51,8 @@ export class WorldRenderer {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   atlas = new ResidentAtlas();
+  crops = new AnimationAtlas("/assets/farm-crops.webp", 4, 3, 0, false, true);
+  hens = new AnimationAtlas("/assets/farm-hens.webp", 4, 6, 0, false, true);
   remains = new AnimationAtlas("/assets/residents-remains.png", 4, 4);
   foundation = new WorldFoundation();
   terrain = new PaintedTerrain();
@@ -1152,27 +1156,6 @@ export class WorldRenderer {
               0.8,
             );
           }
-          if (farm) {
-            for (let r = 0; r < 2; r++) {
-              const [a, b] = this.project(x + 0.25 + r * 0.45, y + 0.5, 2);
-              this.line(
-                [
-                  [a - 4 * s, b + 1 * s],
-                  [a + 4 * s, b - 2 * s],
-                ],
-                "#544f39",
-                2,
-              );
-              this.line(
-                [
-                  [a, b],
-                  [a, b - (4 + 7 * (1 - wet)) * s],
-                ],
-                mix("668044", "ac9159", wet),
-                2,
-              );
-            }
-          }
         }
     // Shared crossing coordinates keep the visible bridges and navigation aligned.
     // Fractional stage: sprites cross-fade instead of popping at 55 % and 18 %.
@@ -1239,6 +1222,53 @@ export class WorldRenderer {
     for (const b of w.buildings)
       if (!["well", "farm", "reservoir"].includes(b.type))
         objects.push({ depth: b.x + b.y + 1.5, draw: () => this.house(b, w) });
+    if (this.crops.ready) {
+      for (let row = 0; row < cropRows; row++) {
+        const growth = w.cropGrowth?.[row] ?? initialGrowth(row);
+        for (let col = 0; col < 8; col++) {
+          const variation = noise(row + 62, col);
+          const x = 5.45 + col * 0.72 + variation * 0.13;
+          const y = cropRowY(row) + (noise(col + 32, row) - 0.5) * 0.13;
+          const maturity = Math.min(
+            3,
+            Math.floor((growth + variation * 0.05) * 4),
+          );
+          objects.push({
+            depth: x + y,
+            draw: () => {
+              const [px, py] = this.project(x, y);
+              this.crops.draw(
+                c,
+                (row % 3) * 4 + maturity,
+                px,
+                py,
+                (21 + variation * 4) * s,
+                variation > 0.5,
+              );
+            },
+          });
+        }
+      }
+    }
+    if (this.hens.ready) {
+      for (const hen of foragingHens(this.time)) {
+        objects.push({
+          depth: hen.x + hen.y,
+          draw: () => {
+            const [x, y] = this.project(hen.x, hen.y);
+            this.ellipse(x, y, 8, 3, "#29231644");
+            this.hens.draw(
+              c,
+              hen.breed * 8 + hen.frame,
+              x,
+              y,
+              22 * s,
+              hen.mirror,
+            );
+          },
+        });
+      }
+    }
     // Trees surround the settlement, leaving the inhabited center readable.
     for (let i = 0; i < 135; i++) {
       const [x, y] = treePosition(i);

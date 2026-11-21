@@ -1,3 +1,4 @@
+import { growCrops } from "./crops";
 import { indoors, needsHomeCare } from "./shelter";
 import {
   growResident,
@@ -530,6 +531,7 @@ export function step(w: World) {
         (0.06 * w.cooperation) / 100),
   );
   updateLocalEnvironment(w);
+  growCrops(w);
   for (const b of w.buildings) {
     const wear = buildingWear(w, b);
     b.condition = clamp(
