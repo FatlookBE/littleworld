@@ -1285,7 +1285,11 @@ export class WorldRenderer {
     // Trees surround the settlement, leaving the inhabited center readable.
     for (let i = 0; i < 135; i++) {
       const [x, y] = treePosition(i);
+      const nearCrops =
+        x >= field.x - 1.5 && x <= field.x + field.width + 1.5 &&
+        y >= field.y - 1.5 && y <= field.y + field.height + 1.5;
       if (
+        nearCrops ||
         Math.abs(x - riverX(y)) < 2.4 ||
         Math.abs(y - 15) < 1.4 ||
         (x > 5 && x < 25 && y > 5 && y < 24)
