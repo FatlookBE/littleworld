@@ -1,3 +1,4 @@
+import { field, lanes } from "./village-layout";
 import { cropRows, cropRowY } from "./core/crops";
 import { loadPaintedImage } from "./asset-status";
 import { plotPosition } from "./core/local-environment";
@@ -192,12 +193,12 @@ export class PaintedTerrain {
       snow,
     );
     const road = new Path2D();
-    road.moveTo(4, 15);
-    road.bezierCurveTo(9, 14.7, 19, 15.3, 28, 15);
-    road.moveTo(13, 7.5);
-    road.bezierCurveTo(12.7, 11, 13.2, 16, 13, 20);
-    road.moveTo(7.5, 10);
-    road.bezierCurveTo(12, 9.8, 17, 10.2, 22, 10);
+    for (const [first, ...rest] of lanes) {
+      road.moveTo(...first);
+      for (const point of rest) road.lineTo(...point);
+    }
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
     ctx.strokeStyle = "#66553a66";
     ctx.lineWidth = 1.1;
     ctx.stroke(road);
@@ -205,13 +206,13 @@ export class PaintedTerrain {
     ctx.lineWidth = 0.72;
     ctx.stroke(road);
     ctx.fillStyle = material(1, 5);
-    ctx.fillRect(5, 19, 6, 5);
+    ctx.fillRect(field.x, field.y, field.width, field.height);
     for (let row = 0; row < cropRows; row++) {
       ctx.strokeStyle = "#4f3b2799";
       ctx.lineWidth = 0.08;
       ctx.beginPath();
-      ctx.moveTo(5.2, cropRowY(row));
-      ctx.lineTo(10.8, cropRowY(row));
+      ctx.moveTo(field.x + 0.2, cropRowY(row));
+      ctx.lineTo(field.x + field.width - 0.2, cropRowY(row));
       ctx.stroke();
     }
     if (snow > 0) {
@@ -220,7 +221,7 @@ export class PaintedTerrain {
         ctx.lineWidth = 0.72;
         ctx.stroke(road);
       });
-      snowLayer(0.65, () => ctx.fillRect(5, 19, 6, 5));
+      snowLayer(0.65, () => ctx.fillRect(field.x, field.y, field.width, field.height));
     }
     ctx.restore();
     return true;
