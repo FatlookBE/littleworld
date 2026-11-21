@@ -1,3 +1,4 @@
+import { field } from "../village-layout";
 import { growCrops } from "./crops";
 import { indoors, needsHomeCare } from "./shelter";
 import {
@@ -318,7 +319,7 @@ function destination(w: World, v: Villager) {
     }
     const job = v.id % 8;
     const spots: [number, number][] = [
-      [7 + (v.id % 3), 20],
+      [field.x + 1.5 + (v.id % 3), field.y + 0.5],
       [13, 10.5],
       [13, 14],
       [8, 8.5],

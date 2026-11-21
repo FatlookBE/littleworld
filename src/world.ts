@@ -1,3 +1,4 @@
+import { field, onLane } from "./village-layout";
 import { cropRows, cropRowY, initialGrowth } from "./core/crops";
 import { doorStep } from "./core/home-visits";
 import { residentScale } from "./core/population";
@@ -1068,11 +1069,12 @@ export class WorldRenderer {
           const n = noise(x, y),
             river = Math.abs(x - riverX(y)),
             waterWidth = riverHalfWidth({ water: level });
-          const path =
-            (Math.abs(y - 15) < 0.8 && x > 3) ||
-            (Math.abs(x - 13) < 0.7 && y > 7 && y < 20) ||
-            (y === 10 && x > 7 && x < 22);
-          const farm = x >= 5 && x <= 10 && y >= 19 && y <= 23;
+          const path = onLane(x + 0.5, y + 0.5);
+          const farm =
+            x >= field.x &&
+            x < field.x + field.width &&
+            y >= field.y &&
+            y < field.y + field.height;
           let color = mix(
             n > 0.5 ? "4d5940" : "505c42",
             n > 0.5 ? "77664c" : "7b6a4e",
@@ -1195,14 +1197,26 @@ export class WorldRenderer {
       } else
         this.box(bx - 2.3, row, 4.6, 1, 5, "#aa936c", "#75684e", "#8d7959", 3);
     }
-    const well = w.buildings[8],
-      [wx, wy] = this.project(13.3, 13.3);
-    if (this.waterworks.ready)
-      staged(Math.max(waterStage, infrastructureStage(well.condition)), (i) =>
-        this.waterworks.draw(c, i * 4 + 1, wx, wy + 10 * s, 57 * s),
-      );
-    else this.environment.draw(c, 7, wx, wy + 10 * s, 57 * s);
-    this.hits.push({ x: wx, y: wy - 15 * s, id: 8, kind: "building" });
+    const objects: { depth: number; draw: () => void }[] = [];
+    const well = w.buildings[8];
+    objects.push({
+      depth: well.x + well.y + 1.1,
+      draw: () => {
+        const [wx, wy] = this.project(well.x + 0.55, well.y + 0.55);
+        if (this.waterworks.ready)
+          staged(
+            Math.max(waterStage, infrastructureStage(well.condition)),
+            (i) => this.waterworks.draw(c, i * 4 + 1, wx, wy + 10 * s, 57 * s),
+          );
+        else this.environment.draw(c, 7, wx, wy + 10 * s, 57 * s);
+        this.hits.push({
+          x: wx,
+          y: wy - 15 * s,
+          id: well.id,
+          kind: "building",
+        });
+      },
+    });
     const [rx, ry] = this.project(24.3, 9.3);
     if (this.waterworks.ready)
       staged(
@@ -1218,7 +1232,6 @@ export class WorldRenderer {
           this.waterworks.draw(c, i * 4 + 3, px, py + 7 * s, 55 * s, 30 * s),
         );
     }
-    const objects: { depth: number; draw: () => void }[] = [];
     for (const b of w.buildings)
       if (!["well", "farm", "reservoir"].includes(b.type))
         objects.push({ depth: b.x + b.y + 1.5, draw: () => this.house(b, w) });
@@ -1227,7 +1240,7 @@ export class WorldRenderer {
         const growth = w.cropGrowth?.[row] ?? initialGrowth(row);
         for (let col = 0; col < 8; col++) {
           const variation = noise(row + 62, col);
-          const x = 5.45 + col * 0.72 + variation * 0.13;
+          const x = field.x + 0.45 + col * 0.72 + variation * 0.13;
           const y = cropRowY(row) + (noise(col + 32, row) - 0.5) * 0.13;
           const maturity = Math.min(
             3,
@@ -1323,7 +1336,10 @@ export class WorldRenderer {
       });
     }
     objects.sort((a, b) => a.depth - b.depth).forEach((o) => o.draw());
-    const farm = this.project(8, 21);
+    const farm = this.project(
+      field.x + field.width / 2,
+      field.y + field.height / 2,
+    );
     this.hits.push({ x: farm[0], y: farm[1], id: 9, kind: "building" });
     if (!w.settings.reducedMotion) {
       // Subtle moving cloud shadows and birds, never opaque over the town.
