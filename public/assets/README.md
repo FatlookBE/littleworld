@@ -122,3 +122,7 @@ Référence de dessin pour ImageGen : les silhouettes de `residents-variants.png
 ## Hirondelles
 
 La planche transparente `swallow-flight.webp` contient huit poses d’hirondelle rustique en vol, en quatre colonnes et deux lignes. Consigne ImageGen : « Barn swallow flying right, forked tail, blue back, rusty red throat, warm cream breast, warm painted medieval RPG shading and brown ink contours. Eight successive articulated wingbeat poses, body and beak anchored in place. » La troisième pose sert au vol plané.
+
+## Poules de la ferme
+
+`farm-hens.webp` rassemble trois plumages dans une grille de quatre colonnes et six lignes. Chaque variété a une ligne de marche et une ligne de picorage. Les trois séries sont peintes avec ImageGen, suivant la consigne « four alternating walking poses, four pecking poses, warm cel-painted feathers, dark brown ink outlines, facing right ». La rousse sert de référence pour la Sussex à collerette noire et pour la poule Soie à huppe et pattes emplumées.

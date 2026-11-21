@@ -3,6 +3,7 @@ import { residentScale } from "./core/population";
 import { indoors, needsHomeCare } from "./core/shelter";
 import { drawHouseDoor } from "./house-door";
 import { treePosition } from "./core/local-environment";
+import { foragingHens } from "./hens";
 import { drawSwallows } from "./swallows";
 import { drawCritters } from "./critters";
 import { bridgeRows, riverCenter, riverHalfWidth } from "./core/navigation";
@@ -49,6 +50,7 @@ export class WorldRenderer {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
   atlas = new ResidentAtlas();
+  hens = new AnimationAtlas("/assets/farm-hens.webp", 4, 6, 0, false, true);
   remains = new AnimationAtlas("/assets/residents-remains.png", 4, 4);
   foundation = new WorldFoundation();
   terrain = new PaintedTerrain();
@@ -1239,6 +1241,18 @@ export class WorldRenderer {
     for (const b of w.buildings)
       if (!["well", "farm", "reservoir"].includes(b.type))
         objects.push({ depth: b.x + b.y + 1.5, draw: () => this.house(b, w) });
+    if (this.hens.ready) {
+      for (const hen of foragingHens(this.time)) {
+        objects.push({
+          depth: hen.x + hen.y,
+          draw: () => {
+            const [x, y] = this.project(hen.x, hen.y);
+            this.ellipse(x, y, 8, 3, "#29231644");
+            this.hens.draw(c, hen.breed * 8 + hen.frame, x, y, 22 * s, hen.mirror);
+          },
+        });
+      }
+    }
     // Trees surround the settlement, leaving the inhabited center readable.
     for (let i = 0; i < 135; i++) {
       const [x, y] = treePosition(i);
