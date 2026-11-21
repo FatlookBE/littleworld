@@ -3,6 +3,7 @@ import { residentScale } from "./core/population";
 import { indoors, needsHomeCare } from "./core/shelter";
 import { drawHouseDoor } from "./house-door";
 import { treePosition } from "./core/local-environment";
+import { drawSwallows } from "./swallows";
 import { drawCritters } from "./critters";
 import { bridgeRows, riverCenter, riverHalfWidth } from "./core/navigation";
 import { remainsStage } from "./core/lifecycle";
@@ -1299,23 +1300,13 @@ export class WorldRenderer {
       const cloud = ((this.time * 8) % (this.width + 500)) - 250;
       this.ellipse(cloud, this.height * 0.4, 160, 35, "#1c302b0b");
       this.ellipse(cloud + 120, this.height * 0.4 + 30, 100, 25, "#1c302b09");
-      if (p < 0.7)
-        for (let i = 0; i < 4; i++) {
-          const x =
-              this.width * 0.35 +
-              Math.sin(this.time * 0.12 + i) * this.width * 0.18,
-            y = this.height * 0.25 + Math.cos(this.time * 0.18 + i) * 30;
-          const flap = Math.sin(this.time * 7 + i) * 3;
-          this.line(
-            [
-              [x - 5, y + flap],
-              [x, y],
-              [x + 5, y + flap],
-            ],
-            "#d7d5b4",
-            1,
-          );
-        }
+      drawSwallows(
+        c,
+        this.project(14, 14, 110),
+        s,
+        this.time,
+        daylight(w.tick) * Math.min(1, Math.max(0, (0.7 - p) / 0.22)),
+      );
       if (w.weather === "Neige légère") {
         // Flakes drift and wobble instead of falling straight.
         c.fillStyle = "#eef3f1";
