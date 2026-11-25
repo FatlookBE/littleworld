@@ -34,6 +34,7 @@ export interface Villager {
   actionAt?: number;
   visit?: import("./home-visits").HomeVisit;
   visitAfter?: number;
+  aidAfter?: number;
   walkWait?: number;
   repairTarget?: number;
   hunger: number;

@@ -1,3 +1,4 @@
+import { residentAidRestTicks } from "./resident-aid";
 import { cropRows } from "./crops";
 import { residentRecordLimit, villageCapacity } from "./population";
 import type { World } from "./types";
@@ -205,6 +206,8 @@ export function restore(text: string): World {
           !finite(v.visit.until, v.visit.since, 1e12))) ||
       (v.nextDecision !== undefined && !finite(v.nextDecision, 0, 1e12)) ||
       !finite(v.cooldown, 0, 1e12) ||
+      (v.aidAfter !== undefined &&
+        (!Number.isSafeInteger(v.aidAfter) || !finite(v.aidAfter, 0, w.tick + residentAidRestTicks))) ||
       !Array.isArray(v.ties) ||
       v.ties.length > 24 ||
       !v.ties.every(
