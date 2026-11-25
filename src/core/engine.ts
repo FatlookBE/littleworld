@@ -22,6 +22,7 @@ import { updateLocalEnvironment, buildingWear } from "./local-environment";
 import { updateNutrition } from "./nutrition";
 import { spreadDestination, moveResident } from "./crowd";
 import { apocalypse } from "./apocalypse";
+import { advanceVillageStories } from "./village-stories";
 import type { World, Memory, Villager, Scenario } from "./types";
 import {
   totals,
@@ -676,6 +677,8 @@ export function step(w: World) {
       "hope",
       child.id,
     );
+  if (!isSeasonStart(w.tick))
+    advanceVillageStories(w, (text, kind, person) => note(w, text, kind, person));
   const s = stage(w);
   if (!w.milestones.includes(s)) {
     w.milestones.push(s);
@@ -722,6 +725,7 @@ export function newSession(w: World, now = Date.now()) {
   w.replayIndex = 0;
   if (w.settings.scenario === "session") {
     delete w.disasters;
+    delete w.stories;
     const fresh = createWorld(now, w.seed);
     Object.assign(w, {
       ...fresh,
