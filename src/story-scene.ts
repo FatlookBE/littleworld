@@ -19,6 +19,13 @@ export function storyCue(w: Pick<World, "stories" | "buildings">): Cue | null {
     if (!hall) return null;
     return { id, phase, x: hall.x + 1, y: hall.y + 2.1, label: "À la Halle" };
   }
+  if (id === "lost-starter") {
+    const bakery = w.buildings.find((building) => building.type === "bakery");
+    if (!bakery) return null;
+    return {
+      id, phase, x: bakery.x + 0.65, y: bakery.y + 2.1, label: "À la boulangerie",
+    };
+  }
   const y = bridgeRows[1] + 0.5;
   return { id, phase, x: riverCenter(y), y, label: "Au pont" };
 }
@@ -66,6 +73,23 @@ export function drawStoryCue(
       c.strokeStyle = "#a5d4c6";
       c.beginPath();
       c.ellipse(12, 3, 6, 2.7, 0, 0, Math.PI * 1.5);
+      c.stroke();
+    }
+  } else if (cue.id === "lost-starter") {
+    c.fillStyle = "#8d603d";
+    c.fillRect(-12, -4, 24, 5);
+    c.strokeRect(-12, -4, 24, 5);
+    c.fillStyle = "#bc855e";
+    c.fillRect(-8, -15, 8, 11);
+    c.strokeRect(-8, -15, 8, 11);
+    c.fillStyle = "#ddc59c";
+    c.fillRect(-9, -17, 10, 3);
+    if (cue.phase === 1) {
+      c.fillStyle = "#e7b473";
+      c.beginPath();
+      c.ellipse(5, -7, 4, 2.8, 0.2, 0, Math.PI * 2);
+      c.ellipse(9, -10, 3.4, 2.1, -0.4, 0, Math.PI * 2);
+      c.fill();
       c.stroke();
     }
   } else {
