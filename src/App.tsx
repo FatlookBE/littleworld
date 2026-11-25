@@ -46,6 +46,7 @@ import { loadWorld, saveWorld, restore } from "./core/persistence";
 import type { World, Scenario } from "./core/types";
 import { WorldRenderer } from "./world";
 import { storyCue } from "./story-scene";
+import { contributeToStory, storyAid } from "./core/village-stories";
 import { daylight } from "./daylight";
 import { daysToNextSeason, season, seasonNames } from "./core/seasons";
 import "./App.css";
@@ -354,6 +355,7 @@ function App() {
   const population = residents(w).length,
     latest = w.chronicle[0];
   const cue = storyCue(w);
+  const aid = panel === "chronicle" ? storyAid(w) : null;
   const dailyUsage = dailyFresh(w);
   const todayTokens = dailyUsage.get(w.day) ?? 0;
   const displayedBudget = effectiveBudget(w, dailyUsage);
@@ -925,6 +927,35 @@ function App() {
                 >
                   Voir l’événement en cours · {cue.label} ↗
                 </button>
+              )}
+              {aid && (
+                <section className="story-aid" aria-labelledby="story-aid-heading">
+                  <h3 id="story-aid-heading">Donner un coup de main</h3>
+                  <p id="story-aid-details">
+                    {aid.contributed
+                      ? "Le village a reçu votre aide. La suite dépend encore de ses réserves et de son entraide."
+                      : `Réserves : −${aid.cost} ${aid.resource === "water" ? "d’eau" : "de nourriture"}. Entraide : +${aid.benefit} (sur 100).`}
+                  </p>
+                  <button
+                    type="button"
+                    className="primary"
+                    aria-describedby="story-aid-details"
+                    aria-disabled={aid.contributed || !aid.affordable}
+                    onClick={() => {
+                      if (aid.contributed || !aid.affordable) return;
+                      const current = world.current;
+                      const applied = contributeToStory(current, aid.id, (text, kind, resident) =>
+                        note(current, text, kind, resident),
+                      );
+                      update();
+                      announce(applied ? aid.text : "Cette aide n’est plus disponible.");
+                    }}
+                  >
+                    {aid.contributed
+                      ? "Aide apportée"
+                      : aid.affordable ? aid.label : "Réserves insuffisantes"}
+                  </button>
+                </section>
               )}
               <ol className="timeline">
                 {w.chronicle.map((e, i) => (
