@@ -60,3 +60,26 @@ it("draws a second lantern only when the next clue is revealed and restores canv
   expect(c.save).toHaveBeenCalledTimes(2);
   expect(c.restore).toHaveBeenCalledTimes(2);
 });
+
+it("locates the starter at the bakery and only draws the dough after the clue", () => {
+  const w = createWorld(0);
+  const bakery = w.buildings.find((building) => building.type === "bakery")!;
+  w.stories = {
+    nextAt: 0, finished: [],
+    active: { id: "lost-starter", phase: 0, due: 300, person: 0 },
+  };
+  expect(storyCue(w)).toMatchObject({
+    label: "À la boulangerie", x: bakery.x + 0.65, y: bakery.y + 2.1,
+  });
+  const c = {
+    save: vi.fn(), restore: vi.fn(), translate: vi.fn(), scale: vi.fn(),
+    fillRect: vi.fn(), strokeRect: vi.fn(), beginPath: vi.fn(),
+    ellipse: vi.fn(), fill: vi.fn(), stroke: vi.fn(),
+  };
+  const ctx = c as unknown as CanvasRenderingContext2D;
+  drawStoryCue(ctx, storyCue(w)!, [30, 40], 1);
+  expect(c.ellipse).not.toHaveBeenCalled();
+  w.stories.active!.phase = 1;
+  drawStoryCue(ctx, storyCue(w)!, [30, 40], 1);
+  expect(c.ellipse).toHaveBeenCalledTimes(2);
+});

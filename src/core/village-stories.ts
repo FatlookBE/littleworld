@@ -1,6 +1,7 @@
+import { season } from "./seasons";
 import type { Memory, Villager, World } from "./types";
 
-type StoryId = "cistern" | "seed-cache" | "lanterns";
+type StoryId = "cistern" | "seed-cache" | "lanterns" | "lost-starter";
 type StoryState = {
   active?: { id: StoryId; phase: 0 | 1; due: number; person: number; helped?: true };
   nextAt: number;
@@ -15,9 +16,11 @@ type Outcome = {
   cooperation?: number;
 };
 
-const ids: readonly StoryId[] = ["cistern", "seed-cache", "lanterns"];
+const ids: readonly StoryId[] = ["cistern", "seed-cache", "lanterns", "lost-starter"];
 const probeEvery = 24;
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
+const bakeryUsable = (w: World) =>
+  w.buildings.some((building) => building.type === "bakery" && building.condition >= 35);
 const stories: Record<
   StoryId,
   {
@@ -85,6 +88,25 @@ const stories: Record<
             text: `${v.name} décroche la dernière lanterne. Les foyers gardent le code pour des jours meilleurs.`,
           },
   },
+  "lost-starter": {
+    when: (w) => season(w.tick) === 2 && w.food >= 25 && bakeryUsable(w),
+    lead: (v) =>
+      `${v.name} déniche un pot gravé en rangeant la boulangerie pour l’automne.`,
+    turn: (v) =>
+      `${v.name} découvre un levain encore vivant dans le pot. Les voisins envisagent une fournée commune.`,
+    end: (w, v) =>
+      w.food >= 31 && w.cooperation >= 50 && bakeryUsable(w)
+        ? {
+            kind: "hope",
+            text: `${v.name} sort les premiers pains du four. Chaque foyer en emporte un morceau et un peu de levain.`,
+            food: -4,
+            cooperation: 7,
+          }
+        : {
+            kind: "ordinary",
+            text: `${v.name} remet le couvercle sur le levain. La fournée attendra des jours meilleurs.`,
+          },
+  },
 };
 
 const aid = {
@@ -108,6 +130,13 @@ const aid = {
     cost: 2,
     benefit: 6,
     text: "Des provisions sont prêtes pour la tournée des deux rives.",
+  },
+  "lost-starter": {
+    label: "Réserver de l’eau pour pétrir la pâte",
+    resource: "water",
+    cost: 3,
+    benefit: 7,
+    text: "Une jarre d’eau est réservée pour la fournée commune.",
   },
 } as const satisfies Record<
   StoryId,

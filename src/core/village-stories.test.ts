@@ -160,3 +160,42 @@ it("offers different aid for seeds and lanterns", () => {
   advance(lanterns, 282);
   expect(storyAid(lanterns)).toMatchObject({ id: "lanterns", resource: "food", cost: 2 });
 });
+
+it("discovers the forgotten starter in autumn and lets an offering make the bake happen", () => {
+  const w = createWorld(0);
+  w.stories = { nextAt: 0, finished: ["cistern", "seed-cache", "lanterns"] };
+  w.cooperation = 44;
+  const autumn = 2 * 4 * 288;
+  advance(w, autumn - 24);
+  expect(w.stories.active).toBeUndefined();
+  advance(w, autumn);
+  expect(w.stories.active).toMatchObject({ id: "lost-starter", phase: 0 });
+  expect(w.chronicle[0].text).toContain("pot gravé");
+  advance(w, autumn + 42);
+  const unfunded = restore(JSON.stringify(w));
+  const water = w.water;
+  const food = w.food;
+  expect(contribute(w, "lost-starter")).toBe(true);
+  expect(w.water).toBe(water - 3);
+  advance(w, autumn + 100);
+  advance(unfunded, autumn + 100);
+  expect(w.chronicle[0].text).toContain("premiers pains");
+  expect(w.food).toBe(food - 4);
+  expect(w.cooperation).toBe(58);
+  expect(unfunded.chronicle[0].text).toContain("attendra");
+  expect(unfunded.food).toBe(food);
+  expect(restore(JSON.stringify(w)).stories?.finished).toContain("lost-starter");
+});
+
+it("waits for a usable bakery before starting the autumn story", () => {
+  const w = createWorld(0);
+  const bakery = w.buildings.find((b) => b.type === "bakery")!;
+  w.stories = { nextAt: 0, finished: ["cistern", "seed-cache", "lanterns"] };
+  bakery.condition = 34;
+  const autumn = 2 * 4 * 288;
+  advance(w, autumn);
+  expect(w.stories.active).toBeUndefined();
+  bakery.condition = 36;
+  advance(w, autumn + 24);
+  expect(w.stories.active).toMatchObject({ id: "lost-starter" });
+});
