@@ -69,7 +69,7 @@ export function reconstructionJob(w: World, v: Villager) {
   }
 }
 
-export function repairAtDestination(w: World, v: Villager) {
+export function activeRepairAt(w: World, v: Villager) {
   const b = w.buildings[v.repairTarget ?? -1];
   if (
     !b ||
@@ -80,6 +80,12 @@ export function repairAtDestination(w: World, v: Villager) {
     Math.hypot(v.x - b.x, v.y - b.y) > 3
   )
     return;
+  return b;
+}
+
+export function repairAtDestination(w: World, v: Villager) {
+  const b = activeRepairAt(w, v);
+  if (!b) return;
   const before = b.condition;
   b.condition = Math.min(85, before + 0.18);
   v.energy = Math.max(0, v.energy - 0.12);
