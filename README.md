@@ -21,7 +21,7 @@ Garder la même adresse (notamment `localhost` ou `127.0.0.1`) pour retrouver la
 
 - **Jouer la démo** ouvre un village neuf à vitesse normale. Il reçoit un lot de tokens fictifs toutes les quatre secondes de simulation, pendant 100 lots. Le village continue ensuite sa vie. **Mon village** ramène à la sauvegarde locale.
 - Cliquer un habitant ou ouvrir **Habitants & lieux** : besoins, proches, faveurs et souvenirs persistants. Les histoires suivent les ressources et les rencontres, pas une cinématique.
-- **Chronique** : récoltes perdues, partage d’eau, disputes, réparations et décès. Certains récits se dévoilent en plusieurs temps ; leur issue dépend de l’eau, des réserves et de l’entraide du village. Le bouton **i** explique la causalité et permet une entraide fictive.
+- **Chronique** : récoltes perdues, partage d’eau, disputes, réparations et décès. Certains récits se dévoilent en plusieurs temps ; leur issue dépend de l’eau, des réserves et de l’entraide du village. Leurs indices apparaissent dans le décor ; la Chronique permet de rejoindre le lieu d’un événement en cours. Le bouton **i** explique la causalité et permet une entraide fictive.
 - Glisser ou flèches pour déplacer la caméra ; molette ou boutons pour zoomer ; Espace pour mettre en pause ; Échap pour fermer. Tous les habitants et lieux sont accessibles sans le canvas. Disposition compacte pour une petite fenêtre de navigateur ; aucun mode système toujours au premier plan.
 - Sauvegarde locale toutes les cinq secondes et à la mise en arrière-plan. Exporter dans **Synchro & données** pour sauvegarder ou avant réinitialisation. Une confirmation protège le reset. Rattrapage hors ligne limité à 300 ticks, sans création d’usage démo.
 

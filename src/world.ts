@@ -20,6 +20,7 @@ import { WaterLevel, Waterfall, waterHalfWidth } from "./water";
 import { daylight, goldenHour } from "./daylight";
 import { autumnColour, bareBranches, snowCover } from "./core/seasons";
 import type { World, Building, Villager } from "./core/types";
+import { drawStoryCue, storyCue } from "./story-scene";
 
 type Point = [number, number];
 type Hit = {
@@ -1427,6 +1428,8 @@ export class WorldRenderer {
     }
     this.apocalypseScene(w);
     this.lighting(w);
+    const cue = storyCue(w);
+    if (cue) drawStoryCue(c, cue, this.project(cue.x, cue.y), this.scale);
   }
   /** Light follows the displayed clock: golden dawn and dusk, lit homes at night. */
   lighting(w: World) {
