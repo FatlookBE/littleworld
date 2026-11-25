@@ -45,6 +45,7 @@ import {
 import { loadWorld, saveWorld, restore } from "./core/persistence";
 import type { World, Scenario } from "./core/types";
 import { WorldRenderer } from "./world";
+import { storyCue } from "./story-scene";
 import { daylight } from "./daylight";
 import { daysToNextSeason, season, seasonNames } from "./core/seasons";
 import "./App.css";
@@ -352,6 +353,7 @@ function App() {
   }, []);
   const population = residents(w).length,
     latest = w.chronicle[0];
+  const cue = storyCue(w);
   const dailyUsage = dailyFresh(w);
   const todayTokens = dailyUsage.get(w.day) ?? 0;
   const displayedBudget = effectiveBudget(w, dailyUsage);
@@ -451,6 +453,7 @@ function App() {
       <canvas
         ref={canvas}
         className="world"
+        tabIndex={-1}
         aria-label="Village de Val-des-Saules sur un monde porté par quatre éléphants et une tortue cosmique. Utilisez Habitants et Lieux pour les inspections au clavier."
         onPointerDown={(e) => {
           interaction.current = performance.now();
@@ -906,6 +909,23 @@ function App() {
             <>
               <h2>La chronique</h2>
               <p className="muted">Les petites choses qui changent tout.</p>
+              {cue && (
+                <button
+                  className="text-link"
+                  onClick={() => {
+                    const r = renderer.current;
+                    if (!r) return;
+                    const [x, y] = r.project(cue.x, cue.y);
+                    interaction.current = performance.now();
+                    r.pan[0] += r.width * 0.36 - x;
+                    r.pan[1] += r.height * 0.29 - y;
+                    close();
+                    requestAnimationFrame(() => canvas.current?.focus());
+                  }}
+                >
+                  Voir l’événement en cours · {cue.label} ↗
+                </button>
+              )}
               <ol className="timeline">
                 {w.chronicle.map((e, i) => (
                   <li key={`${e.tick}-${i}`} className={e.kind}>

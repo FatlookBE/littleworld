@@ -70,7 +70,7 @@ const stories: Record<
     when: (w) =>
       w.tick >= 240 && w.cooperation >= 60 && w.food >= 45 && w.water >= 45,
     lead: (v) =>
-      `${v.name} accroche une lanterne au pont. Une seconde s’allume à la fenêtre d’en face.`,
+      `${v.name} accroche une lanterne au pont et guette une réponse sur l’autre rive.`,
     turn: (v) =>
       `${v.name} découvre le code des lumières : une pour demander un coup de main, deux pour l’offrir.`,
     end: (w, v) =>
