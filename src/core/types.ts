@@ -79,6 +79,7 @@ export interface Settings {
   usageSession?: string;
 }
 export interface World {
+  stories?: import("./village-stories").StoryState;
   cropGrowth?: number[];
   lastBirthAt?: number;
   localEnvironment?: import("./local-environment").LocalEnvironment;

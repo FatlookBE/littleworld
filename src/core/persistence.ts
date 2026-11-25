@@ -2,6 +2,7 @@ import { cropRows } from "./crops";
 import { residentRecordLimit, villageCapacity } from "./population";
 import type { World } from "./types";
 import { validateEvent } from "./telemetry";
+import { validVillageStories } from "./village-stories";
 const KEY = "tokenfall-world-v1";
 export function restore(text: string): World {
   const w = JSON.parse(text) as World;
@@ -109,6 +110,8 @@ export function restore(text: string): World {
     w.milestones.length > 6 ||
     !w.milestones.every((m) => Number.isInteger(m) && finite(m, 0, 5)) ||
     !w.chronicle.every(memory) ||
+    (w.stories !== undefined &&
+      !validVillageStories(w.stories, w.tick, w.villagers.length)) ||
     !Array.isArray(w.snapshots) ||
     w.snapshots.length > 20 ||
     !w.snapshots.every(
