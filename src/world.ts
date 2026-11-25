@@ -21,6 +21,7 @@ import { daylight, goldenHour } from "./daylight";
 import { autumnColour, bareBranches, snowCover } from "./core/seasons";
 import type { World, Building, Villager } from "./core/types";
 import { drawStoryCue, storyCue } from "./story-scene";
+import { drawRepairSite, repairSites } from "./repair-scene";
 
 type Point = [number, number];
 type Hit = {
@@ -1311,6 +1312,12 @@ export class WorldRenderer {
             w.localEnvironment?.trees[i]?.health ?? w.vegetation,
             w.localEnvironment?.trees[i]?.scorch ?? 0,
           ),
+      });
+    }
+    for (const site of repairSites(w)) {
+      objects.push({
+        depth: site.x + site.y - 0.03,
+        draw: () => drawRepairSite(c, site, this.project(site.x, site.y), s),
       });
     }
     for (const v of w.villagers) {
