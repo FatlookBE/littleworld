@@ -128,6 +128,10 @@ function App() {
   const world = useRef<World>(view),
     canvas = useRef<HTMLCanvasElement>(null),
     renderer = useRef<WorldRenderer | null>(null);
+  const focusStoryButton = useRef<HTMLButtonElement>(null),
+    interfaceButton = useRef<HTMLButtonElement>(null),
+    chronicleHeading = useRef<HTMLHeadingElement>(null),
+    openedFromFocus = useRef(false);
   const [ready, setReady] = useState(false),
     [paused, setPaused] = useState(false),
     [speed, setSpeed] = useState(1);
@@ -382,9 +386,16 @@ function App() {
     if (renderer.current) renderer.current.zoom = v;
     interaction.current = performance.now();
   };
-  const close = () => {
+  const close = (returnFocus = true) => {
+    const fromFocus = openedFromFocus.current;
+    openedFromFocus.current = false;
     setPanel(null);
     setSelected(null);
+    if (fromFocus && returnFocus) {
+      requestAnimationFrame(() =>
+        (focusStoryButton.current ?? interfaceButton.current)?.focus(),
+      );
+    }
   };
   const toggle = (p: Panel) => {
     setSelected(null);
@@ -594,6 +605,7 @@ function App() {
           ⌖
         </button>
         <button
+          ref={interfaceButton}
           aria-label={focus ? "Afficher l’interface" : "Masquer l’interface"}
           title={focus ? "Afficher l’interface" : "Masquer l’interface"}
           aria-pressed={!focus}
@@ -604,6 +616,20 @@ function App() {
         >
           ▣
         </button>
+        {focus && cue && !panel && !selected && (
+          <button
+            type="button"
+            className="focus-story-entry"
+            ref={focusStoryButton}
+            onClick={() => {
+              openedFromFocus.current = true;
+              setPanel("chronicle");
+              requestAnimationFrame(() => chronicleHeading.current?.focus());
+            }}
+          >
+            <span aria-hidden="true">◈</span> Événement en cours
+          </button>
+        )}
       </div>
       <div className="world-hint">
         Glisser pour explorer <span>·</span> Cliquer pour rencontrer
@@ -727,6 +753,11 @@ function App() {
       {(panel || selected) && (
         <aside
           className="drawer"
+          onKeyDown={(event) => {
+            if (event.key !== "Escape" || !openedFromFocus.current) return;
+            event.stopPropagation();
+            close();
+          }}
           aria-label={
             person
               ? `Histoire de ${person.name}`
@@ -751,7 +782,7 @@ function App() {
                           ? "UNE FICTION VIVANTE"
                           : "FAIRE CONNAISSANCE"}
             </span>
-            <button aria-label="Fermer le panneau" onClick={close}>
+            <button aria-label="Fermer le panneau" onClick={() => close()}>
               ×
             </button>
           </div>
@@ -909,7 +940,7 @@ function App() {
           )}
           {panel === "chronicle" && (
             <>
-              <h2>La chronique</h2>
+              <h2 ref={chronicleHeading} tabIndex={-1}>La chronique</h2>
               <p className="muted">Les petites choses qui changent tout.</p>
               {cue && (
                 <button
@@ -921,7 +952,7 @@ function App() {
                     interaction.current = performance.now();
                     r.pan[0] += r.width * 0.36 - x;
                     r.pan[1] += r.height * 0.29 - y;
-                    close();
+                    close(false);
                     requestAnimationFrame(() => canvas.current?.focus());
                   }}
                 >

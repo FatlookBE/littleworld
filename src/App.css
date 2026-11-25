@@ -1560,7 +1560,7 @@ body {
   background-image: url("/assets/resident-moss-portrait.webp");
 }
 
-/* Focus mode (default): only the world, the zoom tools and the toggle. */
+/* Focus mode: the world and its controls, plus an entry while a story is active. */
 .app.focus .topbar,
 .app.focus .place-title,
 .app.focus .world-caption,
@@ -1570,6 +1570,27 @@ body {
 .app.focus .chronicle-teaser,
 .app.focus .skip {
   display: none;
+}
+
+.view-tools .focus-story-entry {
+  position: absolute;
+  inset-inline-end: calc(100% + 8px);
+  bottom: -3px;
+  width: max-content;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid #bda26e;
+  background: #242920;
+  color: #f4e3b9;
+  font-size: 13px;
+}
+.focus-story-entry span {
+  margin-inline-end: 4px;
+  color: #e6bc70;
+}
+.focus-story-entry:focus-visible {
+  outline: 2px solid #fff0ca;
+  outline-offset: 3px;
 }
 
 .demo-nav {
