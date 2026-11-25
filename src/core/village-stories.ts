@@ -2,7 +2,7 @@ import type { Memory, Villager, World } from "./types";
 
 type StoryId = "cistern" | "seed-cache" | "lanterns";
 type StoryState = {
-  active?: { id: StoryId; phase: 0 | 1; due: number; person: number };
+  active?: { id: StoryId; phase: 0 | 1; due: number; person: number; helped?: true };
   nextAt: number;
   finished: StoryId[];
 };
@@ -87,6 +87,57 @@ const stories: Record<
   },
 };
 
+const aid = {
+  cistern: {
+    label: "Préparer un repas pour l’équipe de la vanne",
+    resource: "food",
+    cost: 3,
+    benefit: 8,
+    text: "Un repas attend l’équipe qui prépare l’ouverture de la citerne.",
+  },
+  "seed-cache": {
+    label: "Mettre de l’eau de côté pour les semis",
+    resource: "water",
+    cost: 4,
+    benefit: 7,
+    text: "Des jarres sont mises de côté pour arroser les semis.",
+  },
+  lanterns: {
+    label: "Préparer des provisions pour la tournée",
+    resource: "food",
+    cost: 2,
+    benefit: 6,
+    text: "Des provisions sont prêtes pour la tournée des deux rives.",
+  },
+} as const satisfies Record<
+  StoryId,
+  { label: string; resource: "water" | "food"; cost: number; benefit: number; text: string }
+>;
+
+export function storyAid(w: World) {
+  const active = w.stories?.active;
+  if (!active || active.phase !== 1 || w.tick >= active.due) return null;
+  const option = aid[active.id];
+  return {
+    ...option,
+    id: active.id,
+    contributed: active.helped === true,
+    affordable: w[option.resource] >= option.cost,
+  };
+}
+
+export function contributeToStory(w: World, id: StoryId, note: StoryNote) {
+  const active = w.stories?.active;
+  const option = storyAid(w);
+  if (!active || !option || option.id !== id || option.contributed || !option.affordable)
+    return false;
+  w[option.resource] -= option.cost;
+  w.cooperation = clamp(w.cooperation + option.benefit);
+  active.helped = true;
+  note(option.text, "hope", active.person);
+  return true;
+}
+
 export function validVillageStories(
   value: unknown,
   tick: number,
@@ -110,6 +161,8 @@ export function validVillageStories(
         ids.includes(s.active.id) &&
         !s.finished.includes(s.active.id) &&
         (s.active.phase === 0 || s.active.phase === 1) &&
+        (s.active.helped === undefined ||
+          (s.active.phase === 1 && s.active.helped === true)) &&
         scheduled(s.active.due) &&
         Number.isInteger(s.active.person) &&
         s.active.person >= 0 &&

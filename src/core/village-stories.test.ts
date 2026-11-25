@@ -2,7 +2,7 @@ import { expect, it } from "vitest";
 import { createWorld, newSession, note, step } from "./engine";
 import { restore } from "./persistence";
 import type { World } from "./types";
-import { advanceVillageStories } from "./village-stories";
+import { advanceVillageStories, contributeToStory, storyAid } from "./village-stories";
 
 const advance = (w: World, tick: number) => {
   w.tick = tick;
@@ -99,4 +99,64 @@ it("starts a different story during ordinary play, with no token usage", () => {
   expect(
     w.chronicle.some((event) => event.text.includes("code des lumières")),
   ).toBe(true);
+});
+
+function contribute(w: World, id: Parameters<typeof contributeToStory>[1]) {
+  return contributeToStory(w, id, (text, kind, person) => note(w, text, kind, person));
+}
+
+it("lets player aid tip the cistern outcome, charges once and persists the decision", () => {
+  const w = dryWorld();
+  w.cooperation = 37;
+  advance(w, 240);
+  expect(storyAid(w)).toBeNull();
+  expect(contribute(w, "cistern")).toBe(false);
+  advance(w, 282);
+  const unhelped = structuredClone(w);
+  const food = w.food;
+  expect(contribute(w, "seed-cache")).toBe(false);
+  expect(contribute(w, "cistern")).toBe(true);
+  expect(w.food).toBe(food - 3);
+  expect(w.cooperation).toBe(45);
+  const restored = restore(JSON.stringify(w));
+  expect(storyAid(restored)?.contributed).toBe(true);
+  expect(contribute(restored, "cistern")).toBe(false);
+  expect(restored.food).toBe(food - 3);
+  advance(restored, 340);
+  advance(unhelped, 340);
+  expect(restored.water).toBe(58);
+  expect(unhelped.water).toBe(48);
+  expect(storyAid(restored)).toBeNull();
+});
+
+it("rejects unaffordable or expired actions without side effects", () => {
+  const w = dryWorld();
+  advance(w, 240);
+  advance(w, 282);
+  const before = w.chronicle.length;
+  w.food = 2;
+  expect(storyAid(w)?.affordable).toBe(false);
+  expect(contribute(w, "cistern")).toBe(false);
+  expect(w.food).toBe(2);
+  w.food = 25;
+  w.tick = 340;
+  expect(contribute(w, "cistern")).toBe(false);
+  expect(w.food).toBe(25);
+  expect(w.chronicle).toHaveLength(before);
+});
+
+it("offers different aid for seeds and lanterns", () => {
+  const seeds = dryWorld();
+  seeds.water = 70;
+  seeds.food = 40;
+  advance(seeds, 240);
+  advance(seeds, 282);
+  expect(storyAid(seeds)).toMatchObject({ id: "seed-cache", resource: "water", cost: 4 });
+  expect(contribute(seeds, "seed-cache")).toBe(true);
+  expect(seeds.water).toBe(66);
+
+  const lanterns = createWorld(0);
+  advance(lanterns, 240);
+  advance(lanterns, 282);
+  expect(storyAid(lanterns)).toMatchObject({ id: "lanterns", resource: "food", cost: 2 });
 });
