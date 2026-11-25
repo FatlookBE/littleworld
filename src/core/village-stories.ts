@@ -6,6 +6,7 @@ type StoryState = {
   active?: { id: StoryId; phase: 0 | 1; due: number; person: number; helped?: true };
   nextAt: number;
   finished: StoryId[];
+  traces?: StoryId[];
 };
 type StoryNote = (text: string, kind: Memory["kind"], person: number) => void;
 type Outcome = {
@@ -185,6 +186,11 @@ export function validVillageStories(
     s.finished.length <= ids.length &&
     new Set(s.finished).size === s.finished.length &&
     s.finished.every((id) => ids.includes(id)) &&
+    (s.traces === undefined ||
+      (Array.isArray(s.traces) &&
+        s.traces.length <= s.finished.length &&
+        new Set(s.traces).size === s.traces.length &&
+        s.traces.every((id) => s.finished.includes(id)))) &&
     (s.active === undefined ||
       (s.active !== null &&
         ids.includes(s.active.id) &&
@@ -227,6 +233,7 @@ export function advanceVillageStories(w: World, note: StoryNote) {
       if (outcome.cooperation)
         w.cooperation = clamp(w.cooperation + outcome.cooperation);
       note(outcome.text, outcome.kind, person.id);
+      if (outcome.kind === "hope") (state.traces ??= []).push(active.id);
     }
     state.finished.push(active.id);
     delete state.active;

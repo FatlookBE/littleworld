@@ -199,3 +199,21 @@ it("waits for a usable bakery before starting the autumn story", () => {
   advance(w, autumn + 24);
   expect(w.stories.active).toMatchObject({ id: "lost-starter" });
 });
+
+it("keeps earned traces across reloads without guessing outcomes for old saves", () => {
+  const w = dryWorld();
+  for (const tick of [240, 282, 340]) advance(w, tick);
+  expect(restore(JSON.stringify(w)).stories?.traces).toEqual(["cistern"]);
+  delete w.stories!.traces;
+  expect(restore(JSON.stringify(w)).stories?.traces).toBeUndefined();
+  w.stories!.traces = ["lanterns"];
+  expect(() => restore(JSON.stringify(w))).toThrow("Structure de sauvegarde invalide");
+});
+
+it("adds no trace when the village seals the cistern", () => {
+  const w = dryWorld();
+  w.cooperation = 20;
+  for (const tick of [240, 282, 340]) advance(w, tick);
+  expect(w.stories?.finished).toEqual(["cistern"]);
+  expect(w.stories?.traces).toBeUndefined();
+});

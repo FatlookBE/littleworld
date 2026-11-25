@@ -10,24 +10,86 @@ type Cue = {
   label: string;
 };
 
-export function storyCue(w: Pick<World, "stories" | "buildings">): Cue | null {
-  const active = w.stories?.active;
-  if (!active) return null;
-  const { id, phase } = active;
+type StoryWorld = Pick<World, "stories" | "buildings">;
+type StorySite = Omit<Cue, "phase">;
+
+function storySite(w: StoryWorld, id: Story["id"]): StorySite | null {
   if (id === "seed-cache") {
     const hall = w.buildings.find((building) => building.type === "market");
     if (!hall) return null;
-    return { id, phase, x: hall.x + 1, y: hall.y + 2.1, label: "À la Halle" };
+    return { id, x: hall.x + 1, y: hall.y + 2.1, label: "À la Halle" };
   }
   if (id === "lost-starter") {
     const bakery = w.buildings.find((building) => building.type === "bakery");
     if (!bakery) return null;
     return {
-      id, phase, x: bakery.x + 0.65, y: bakery.y + 2.1, label: "À la boulangerie",
+      id, x: bakery.x + 0.65, y: bakery.y + 2.1, label: "À la boulangerie",
     };
   }
   const y = bridgeRows[1] + 0.5;
-  return { id, phase, x: riverCenter(y), y, label: "Au pont" };
+  return { id, x: riverCenter(y), y, label: "Au pont" };
+}
+
+export function storyCue(w: StoryWorld): Cue | null {
+  const active = w.stories?.active;
+  if (!active) return null;
+  const site = storySite(w, active.id);
+  return site && { ...site, phase: active.phase };
+}
+
+export function storyTraces(w: StoryWorld): StorySite[] {
+  return (w.stories?.traces ?? []).flatMap((id) => {
+    const site = storySite(w, id);
+    if (!site) return [];
+    // Two stories share this bridge; use opposite ends, away from the active cue.
+    if (id === "lanterns") site.x -= 1.2;
+    if (id === "cistern") site.x += 1.2;
+    return [site];
+  });
+}
+
+/** Permanent props are muted and have no glow or active-event affordance. */
+export function drawStoryTrace(
+  c: CanvasRenderingContext2D,
+  trace: StorySite,
+  screen: [number, number],
+  scale: number,
+) {
+  c.save();
+  c.translate(...screen);
+  c.scale(scale, scale);
+  c.strokeStyle = "#382d24";
+  c.lineWidth = 1;
+  if (trace.id === "cistern") {
+    c.fillStyle = "#7b9083";
+    c.fillRect(-6, -6, 12, 7);
+    c.strokeRect(-6, -6, 12, 7);
+    c.fillStyle = "#b8ccc0";
+    c.fillRect(-3, -4, 6, 2);
+  } else if (trace.id === "lanterns") {
+    c.fillStyle = "#8d6848";
+    c.fillRect(-1, -12, 2, 13);
+    c.fillRect(-5, -12, 10, 6);
+    c.strokeRect(-5, -12, 10, 6);
+    c.fillStyle = "#c3a56e";
+    for (const x of [-3, 1]) c.fillRect(x, -10, 2, 2);
+  } else if (trace.id === "seed-cache") {
+    c.fillStyle = "#906848";
+    c.fillRect(-8, -6, 16, 7);
+    c.strokeRect(-8, -6, 16, 7);
+    c.fillStyle = "#9ca46a";
+    for (const x of [-6, -1, 4]) c.fillRect(x, -10, 3, 4);
+  } else {
+    c.fillStyle = "#a87856";
+    for (const x of [-6, 2]) {
+      c.fillRect(x, -6, 5, 7);
+      c.strokeRect(x, -6, 5, 7);
+      c.fillStyle = "#dec39a";
+      c.fillRect(x - 1, -8, 7, 2);
+      c.fillStyle = "#a87856";
+    }
+  }
+  c.restore();
 }
 
 /** Draw props at the event site, rather than decorating the currently selected villager. */

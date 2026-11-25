@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { createWorld } from "./core/engine";
 import { bridgeRows, riverCenter } from "./core/navigation";
-import { drawStoryCue, storyCue } from "./story-scene";
+import { drawStoryCue, storyCue, storyTraces } from "./story-scene";
 
 it("shows no clue before an arc or after it has finished", () => {
   const w = createWorld(0);
@@ -82,4 +82,19 @@ it("locates the starter at the bakery and only draws the dough after the clue", 
   w.stories.active!.phase = 1;
   drawStoryCue(ctx, storyCue(w)!, [30, 40], 1);
   expect(c.ellipse).toHaveBeenCalledTimes(2);
+});
+
+it("leaves independent bridge traces without making a completed story active", () => {
+  const w = createWorld(0);
+  expect(storyTraces(w)).toEqual([]);
+  w.stories = {
+    nextAt: 90,
+    finished: ["cistern", "lanterns"],
+    traces: ["cistern", "lanterns"],
+  };
+  const [cistern, lanterns] = storyTraces(w);
+  expect(cistern.id).toBe("cistern");
+  expect(lanterns.id).toBe("lanterns");
+  expect(cistern.x - lanterns.x).toBeCloseTo(2.4);
+  expect(storyCue(w)).toBeNull();
 });

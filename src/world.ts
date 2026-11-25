@@ -20,7 +20,7 @@ import { WaterLevel, Waterfall, waterHalfWidth } from "./water";
 import { daylight, goldenHour } from "./daylight";
 import { autumnColour, bareBranches, snowCover } from "./core/seasons";
 import type { World, Building, Villager } from "./core/types";
-import { drawStoryCue, storyCue } from "./story-scene";
+import { drawStoryCue, drawStoryTrace, storyCue, storyTraces } from "./story-scene";
 import { drawRepairSite, repairSites } from "./repair-scene";
 
 type Point = [number, number];
@@ -1312,6 +1312,12 @@ export class WorldRenderer {
             w.localEnvironment?.trees[i]?.health ?? w.vegetation,
             w.localEnvironment?.trees[i]?.scorch ?? 0,
           ),
+      });
+    }
+    for (const trace of storyTraces(w)) {
+      objects.push({
+        depth: trace.x + trace.y,
+        draw: () => drawStoryTrace(c, trace, this.project(trace.x, trace.y), s),
       });
     }
     for (const site of repairSites(w)) {
