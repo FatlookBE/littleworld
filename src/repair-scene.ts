@@ -1,5 +1,6 @@
 import { activeRepairAt } from "./core/reconstruction";
 import type { World } from "./core/types";
+import { drawPaintedProp } from "./painted-props";
 
 type RepairSite = {
   building: number;
@@ -42,7 +43,14 @@ export function drawRepairSite(
   c.ellipse(-12, 1, 11, 3, 0, 0, Math.PI * 2);
   c.fill();
 
-  // Sawhorse and an uneven stack of timber while repairing the structure.
+  const structural = site.stage === "structure";
+  if (drawPaintedProp(c, "sawhorse", structural ? -15 : -17, 2, structural ? 30 : 20)) {
+    if (!structural) drawPaintedProp(c, "bucket", -4, 3, 15);
+    c.restore();
+    return;
+  }
+
+  // Keep the silhouettes readable if the painted atlas is unavailable.
   c.fillStyle = "#855638";
   c.fillRect(-21, -7, 3, 8);
   c.fillRect(-10, -7, 3, 8);

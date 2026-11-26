@@ -1,5 +1,6 @@
 import { bridgeRows, riverCenter } from "./core/navigation";
 import type { World } from "./core/types";
+import { drawPaintedProp } from "./painted-props";
 
 type Story = NonNullable<NonNullable<World["stories"]>["active"]>;
 type Cue = {
@@ -111,6 +112,7 @@ export function drawStoryCue(
       g.addColorStop(1, "#ffb86600");
       c.fillStyle = g;
       c.fillRect(x - 18, -28, 36, 36);
+      if (drawPaintedProp(c, "lantern", x, 2, 26)) continue;
       c.fillStyle = "#725038";
       c.fillRect(x - 1, -14, 2, 16);
       c.fillStyle = "#ffd291";
@@ -120,17 +122,19 @@ export function drawStoryCue(
       c.fillRect(x - 1.5, -14, 3, 4);
     }
   } else if (cue.id === "cistern") {
-    c.beginPath();
-    c.ellipse(0, 0, 11, 4.5, 0, 0, Math.PI * 2);
-    c.fillStyle = cue.phase === 0 ? "#525647" : "#558c86";
-    c.fill();
-    c.stroke();
-    c.beginPath();
-    for (const x of [-5, 0, 5]) {
-      c.moveTo(x - 2, -2.5);
-      c.lineTo(x + 2, 2.5);
+    if (!drawPaintedProp(c, "cistern", 0, 3, 28)) {
+      c.beginPath();
+      c.ellipse(0, 0, 11, 4.5, 0, 0, Math.PI * 2);
+      c.fillStyle = cue.phase === 0 ? "#525647" : "#558c86";
+      c.fill();
+      c.stroke();
+      c.beginPath();
+      for (const x of [-5, 0, 5]) {
+        c.moveTo(x - 2, -2.5);
+        c.lineTo(x + 2, 2.5);
+      }
+      c.stroke();
     }
-    c.stroke();
     if (cue.phase === 1) {
       c.strokeStyle = "#a5d4c6";
       c.beginPath();
@@ -138,32 +142,44 @@ export function drawStoryCue(
       c.stroke();
     }
   } else if (cue.id === "lost-starter") {
-    c.fillStyle = "#8d603d";
-    c.fillRect(-12, -4, 24, 5);
-    c.strokeRect(-12, -4, 24, 5);
-    c.fillStyle = "#bc855e";
-    c.fillRect(-8, -15, 8, 11);
-    c.strokeRect(-8, -15, 8, 11);
-    c.fillStyle = "#ddc59c";
-    c.fillRect(-9, -17, 10, 3);
-    if (cue.phase === 1) {
-      c.fillStyle = "#e7b473";
-      c.beginPath();
-      c.ellipse(5, -7, 4, 2.8, 0.2, 0, Math.PI * 2);
-      c.ellipse(9, -10, 3.4, 2.1, -0.4, 0, Math.PI * 2);
-      c.fill();
-      c.stroke();
-    }
+    const painted = drawPaintedProp(c, "starter", cue.phase === 0 ? 0 : -6, 1, 24);
+    if (painted && cue.phase === 1) drawPaintedProp(c, "loaves", 10, 2, 20);
+    if (!painted) drawStarterFallback(c, cue.phase);
   } else {
-    c.fillStyle = "#a77950";
-    c.fillRect(-8, -9, 16, 10);
-    c.strokeRect(-8, -9, 16, 10);
-    c.fillStyle = "#edca93";
-    c.fillRect(-6, -12, 11, 5);
-    if (cue.phase === 1) {
-      c.fillRect(5, -7, 7, 5);
-      c.fillRect(9, -2, 6, 4);
-    }
+    const painted = drawPaintedProp(c, "seedBasket", cue.phase === 0 ? 0 : -5, 1, 24);
+    if (painted && cue.phase === 1) drawPaintedProp(c, "seedSack", 10, 2, 16);
+    if (!painted) drawSeedFallback(c, cue.phase);
   }
   c.restore();
+}
+
+function drawStarterFallback(c: CanvasRenderingContext2D, phase: Cue["phase"]) {
+  c.fillStyle = "#8d603d";
+  c.fillRect(-12, -4, 24, 5);
+  c.strokeRect(-12, -4, 24, 5);
+  c.fillStyle = "#bc855e";
+  c.fillRect(-8, -15, 8, 11);
+  c.strokeRect(-8, -15, 8, 11);
+  c.fillStyle = "#ddc59c";
+  c.fillRect(-9, -17, 10, 3);
+  if (phase === 1) {
+    c.fillStyle = "#e7b473";
+    c.beginPath();
+    c.ellipse(5, -7, 4, 2.8, 0.2, 0, Math.PI * 2);
+    c.ellipse(9, -10, 3.4, 2.1, -0.4, 0, Math.PI * 2);
+    c.fill();
+    c.stroke();
+  }
+}
+
+function drawSeedFallback(c: CanvasRenderingContext2D, phase: Cue["phase"]) {
+  c.fillStyle = "#a77950";
+  c.fillRect(-8, -9, 16, 10);
+  c.strokeRect(-8, -9, 16, 10);
+  c.fillStyle = "#edca93";
+  c.fillRect(-6, -12, 11, 5);
+  if (phase === 1) {
+    c.fillRect(5, -7, 7, 5);
+    c.fillRect(9, -2, 6, 4);
+  }
 }

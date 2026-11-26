@@ -130,3 +130,9 @@ La planche transparente `swallow-flight.webp` contient huit poses d’hirondelle
 ## Cultures
 
 `farm-crops.webp` regroupe le blé, les choux et les carottes, à quatre stades de croissance chacun. Les cellules transparentes de 160 × 160 px ont une ligne de sol commune. Consigne ImageGen : « isolated medieval kitchen garden plant clumps, four stages growing left to right from tiny shoots to ripe wheat ears, full cabbage head and feathery carrot tops; three-quarter isometric view, warm ochre highlights and fine ink edges ».
+
+## Objets des histoires et des chantiers
+
+La planche transparente `painted-props.webp` contient huit cellules de 96 × 96 px, alignées au sol. Rangée du haut : tréteau avec planches, seau, pot à levain, pains sur une planche. Rangée du bas : panier de semences, sac de semences, lanterne, grille de citerne. Les halos et les reflets restent dessinés par le jeu.
+
+Consigne ImageGen, avec `environment-atlas.png` et `waterworks.png` comme références : « Eight isolated miniature medieval village props, elevated three-quarter isometric perspective, worn matte gouache, irregular brown ink edges, warm ochre lighting, muted sage and slate shadows. Loose texture readable at game size, no cast background or ground tile. True alpha, four columns by two rows. » Les objets ont été recadrés par cellule, redimensionnés, centrés horizontalement et alignés en bas avant l’export WebP.
