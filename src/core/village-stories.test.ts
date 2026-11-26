@@ -217,3 +217,72 @@ it("adds no trace when the village seals the cistern", () => {
   expect(w.stories?.finished).toEqual(["cistern"]);
   expect(w.stories?.traces).toBeUndefined();
 });
+
+function workshopWorld() {
+  const w = createWorld(0);
+  w.stories = {
+    nextAt: 0,
+    finished: ["cistern", "seed-cache", "lanterns", "lost-starter"],
+  };
+  w.cooperation = 52;
+  return w;
+}
+
+const workshop = (w: World) => w.buildings.find((b) => b.type === "workshop")!;
+
+it("lets the village act on the carpenter's marks and repairs only the workshop", () => {
+  const w = workshopWorld();
+  advance(w, 240);
+  expect(w.stories?.active).toBeUndefined();
+  workshop(w).condition = 61;
+  advance(w, 264);
+  expect(w.stories?.active).toMatchObject({ id: "carpenter-marks", phase: 0 });
+  expect(w.chronicle[0].text).toContain("encoches");
+  advance(w, 306);
+  expect(storyAid(w)).toMatchObject({ id: "carpenter-marks", resource: "food", cost: 3 });
+  const otherBuildings = w.buildings.filter((b) => b.type !== "workshop");
+  const before = structuredClone(otherBuildings);
+  const unsupported = structuredClone(w);
+  const food = w.food;
+  expect(contribute(w, "carpenter-marks")).toBe(true);
+  const restored = restore(JSON.stringify(w));
+  expect(contribute(restored, "carpenter-marks")).toBe(false);
+  advance(restored, 364);
+  advance(unsupported, 364);
+  expect(workshop(restored).condition).toBe(75);
+  expect(workshop(unsupported).condition).toBe(61);
+  expect(restored.food).toBe(food - 3);
+  expect(restored.buildings.filter((b) => b.type !== "workshop")).toEqual(before);
+  expect(restore(JSON.stringify(restored)).stories?.traces).toEqual(["carpenter-marks"]);
+  expect(unsupported.stories?.traces).toBeUndefined();
+});
+
+it("leaves the workshop untouched during an active fire, even after the villagers accepted help", () => {
+  const w = workshopWorld();
+  const site = workshop(w);
+  site.condition = 61;
+  const fire = { kind: "fire" as const, x: site.x, y: site.y, people: [], life: 60 };
+  w.disasters = [fire];
+  advance(w, 240);
+  expect(w.stories?.active).toBeUndefined();
+  fire.life = 0;
+  advance(w, 264);
+  advance(w, 306);
+  expect(contribute(w, "carpenter-marks")).toBe(true);
+  fire.life = 60;
+  advance(w, 364);
+  expect(site.condition).toBe(61);
+  expect(w.stories?.traces).toBeUndefined();
+  expect(w.chronicle[0].text).toContain("Les travaux attendront");
+});
+
+it("does not rebuild beyond the ordinary repair ceiling", () => {
+  const w = workshopWorld();
+  workshop(w).condition = 70;
+  w.cooperation = 65;
+  advance(w, 240);
+  advance(w, 282);
+  workshop(w).condition = 81;
+  advance(w, 340);
+  expect(workshop(w).condition).toBe(85);
+});
