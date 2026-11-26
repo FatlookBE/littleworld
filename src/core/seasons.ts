@@ -39,6 +39,7 @@ export function autumnColour(tick: number) {
 }
 
 /** Weather rotates every 150 ticks; the season decides which slots are wet. */
+export const WEATHER_SLOT_TICKS = 150;
 const wetSlots: Record<Season, number[]> = {
   0: [1, 3],
   1: [3],
@@ -47,7 +48,7 @@ const wetSlots: Record<Season, number[]> = {
 };
 export function seasonalWeather(w: World, p: number) {
   const s = season(w.tick),
-    slot = Math.floor(w.tick / 150) % 5;
+    slot = Math.floor(w.tick / WEATHER_SLOT_TICKS) % 5;
   if (p > 0.72) return "Vent de poussière";
   if (wetSlots[s].includes(slot))
     return s === 3 ? "Neige légère" : "Pluie légère";

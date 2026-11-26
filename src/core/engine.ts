@@ -22,6 +22,7 @@ import { updateLocalEnvironment, buildingWear } from "./local-environment";
 import { updateNutrition } from "./nutrition";
 import { spreadDestination, moveResident } from "./crowd";
 import { apocalypse } from "./apocalypse";
+import { collectRainwater } from "./rain-collection";
 import { advanceVillageStories } from "./village-stories";
 import type { World, Memory, Villager, Scenario } from "./types";
 import {
@@ -100,6 +101,14 @@ export function note(
     v.memories.length = Math.min(v.memories.length, 24);
   }
   return event;
+}
+export function harvestRainwater(w: World, buildingId: number) {
+  const collected = collectRainwater(w, buildingId);
+  if (!collected) return null;
+  const text = `L’eau des seaux rejoint la réserve (+${collected.amount} points d’eau).`;
+  collected.site.events.unshift(note(w, text, "hope"));
+  collected.site.events.length = Math.min(collected.site.events.length, 12);
+  return text;
 }
 export function createWorld(now = Date.now(), seed = 9137): World {
   const buildings = [
@@ -726,6 +735,7 @@ export function newSession(w: World, now = Date.now()) {
   if (w.settings.scenario === "session") {
     delete w.disasters;
     delete w.stories;
+    delete w.rainCollectedAt;
     const fresh = createWorld(now, w.seed);
     Object.assign(w, {
       ...fresh,

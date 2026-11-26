@@ -107,6 +107,7 @@ export interface World {
   cooperation: number;
   unrest: number;
   weather: string;
+  rainCollectedAt?: number;
   villagers: Villager[];
   buildings: Building[];
   chronicle: Memory[];

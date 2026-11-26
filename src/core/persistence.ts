@@ -90,6 +90,8 @@ export function restore(text: string): World {
     !Number.isInteger(w.replayIndex) ||
     typeof w.replayOn !== "boolean" ||
     !str(w.weather) ||
+    (w.rainCollectedAt !== undefined &&
+      (!Number.isSafeInteger(w.rainCollectedAt) || !finite(w.rainCollectedAt, 0, w.tick))) ||
     !["session", "daily", "persistent"].includes(s.scenario) ||
     !finite(s.budget, 1000, 1e9) ||
     !finite(s.curve, 0.5, 2) ||
