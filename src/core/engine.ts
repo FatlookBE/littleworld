@@ -24,6 +24,7 @@ import { spreadDestination, moveResident } from "./crowd";
 import { apocalypse } from "./apocalypse";
 import { sendFireWater } from "./fire-aid";
 import { swapMarketGoods } from "./market";
+import { advanceNeighbourTalk, talkingPartner } from "./neighbour-talk";
 import { collectRainwater } from "./rain-collection";
 import { advanceVillageStories } from "./village-stories";
 import type { World, Memory, Villager, Scenario } from "./types";
@@ -406,7 +407,7 @@ function social(w: World, v: Villager) {
     return;
   const tie = v.ties[Math.floor(random(w) * v.ties.length)],
     other = w.villagers[tie.id];
-  if (other.dead || other.visit) return;
+  if (other.dead || other.visit || talkingPartner(w, other)) return;
   const near = Math.hypot(v.x - other.x, v.y - other.y) < 3;
   if (!near) return;
   if (w.water < 40 && other.thirst > 50 && tie.bond > 40 && v.thirst < 65) {
@@ -615,8 +616,9 @@ export function step(w: World) {
         w.water = clamp(w.water - 0.008);
       }
     }
-    const visiting = young || updateHomeVisit(w, v);
-    if (!visiting) {
+    const occupied =
+      young || updateHomeVisit(w, v) || Boolean(talkingPartner(w, v));
+    if (!occupied) {
       if (
         (!v.route.length && w.tick >= (v.nextDecision ?? 0)) ||
         (v.thirst > 60 &&
@@ -682,7 +684,7 @@ export function step(w: World) {
     v.health = clamp(
       v.health + (v.thirst > 85 || v.hunger > 90 ? -0.12 : 0.025),
     );
-    social(w, v);
+    if (!talkingPartner(w, v)) social(w, v);
     if (
       w.food < 35 &&
       v.id % 8 === 0 &&
@@ -697,6 +699,7 @@ export function step(w: World) {
     (text, person, kind = "warning") => note(w, text, kind, person),
   );
   for (const v of residents(w)) if (v.health <= 0) die(w, v);
+  advanceNeighbourTalk(w, (text, kind, person) => note(w, text, kind, person));
   const child = welcomeChild(w);
   if (child)
     note(
@@ -756,6 +759,7 @@ export function newSession(w: World, now = Date.now()) {
     delete w.stories;
     delete w.rainCollectedAt;
     delete w.marketTradedAt;
+    delete w.neighbourTalk;
     const fresh = createWorld(now, w.seed);
     Object.assign(w, {
       ...fresh,
