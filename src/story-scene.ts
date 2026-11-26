@@ -27,6 +27,13 @@ function storySite(w: StoryWorld, id: Story["id"]): StorySite | null {
       id, x: bakery.x + 0.65, y: bakery.y + 2.1, label: "À la boulangerie",
     };
   }
+  if (id === "carpenter-marks") {
+    const workshop = w.buildings.find((building) => building.type === "workshop");
+    if (!workshop) return null;
+    return {
+      id, x: workshop.x + 2.1, y: workshop.y + 1, label: "À l’atelier",
+    };
+  }
   const y = bridgeRows[1] + 0.5;
   return { id, x: riverCenter(y), y, label: "Au pont" };
 }
@@ -80,6 +87,8 @@ export function drawStoryTrace(
     c.strokeRect(-8, -6, 16, 7);
     c.fillStyle = "#9ca46a";
     for (const x of [-6, -1, 4]) c.fillRect(x, -10, 3, 4);
+  } else if (trace.id === "carpenter-marks") {
+    drawWorkshopProps(c, 0, true);
   } else {
     c.fillStyle = "#a87856";
     for (const x of [-6, 2]) {
@@ -141,6 +150,8 @@ export function drawStoryCue(
       c.ellipse(12, 3, 6, 2.7, 0, 0, Math.PI * 1.5);
       c.stroke();
     }
+  } else if (cue.id === "carpenter-marks") {
+    drawWorkshopProps(c, cue.phase, false);
   } else if (cue.id === "lost-starter") {
     const painted = drawPaintedProp(c, "starter", cue.phase === 0 ? 0 : -6, 1, 24);
     if (painted && cue.phase === 1) drawPaintedProp(c, "loaves", 10, 2, 20);
@@ -151,6 +162,27 @@ export function drawStoryCue(
     if (!painted) drawSeedFallback(c, cue.phase);
   }
   c.restore();
+}
+
+function drawWorkshopProps(
+  c: CanvasRenderingContext2D,
+  phase: Cue["phase"],
+  trace: boolean,
+) {
+  const x = phase === 1 ? -4 : 0;
+  if (!drawPaintedProp(c, "sawhorse", x, 2, trace ? 18 : 25)) {
+    c.fillStyle = "#8e6446";
+    c.fillRect(x - 2, -10, 2, 11);
+    c.fillRect(x + 5, -10, 2, 11);
+    c.fillStyle = "#aa7a50";
+    c.fillRect(x - 5, -11, 15, 3);
+    c.strokeRect(x - 5, -11, 15, 3);
+  }
+  if (phase === 1 && !drawPaintedProp(c, "bucket", 9, 2, 16)) {
+    c.fillStyle = "#9f8162";
+    c.fillRect(6, -5, 6, 6);
+    c.strokeRect(6, -5, 6, 6);
+  }
 }
 
 function drawStarterFallback(c: CanvasRenderingContext2D, phase: Cue["phase"]) {

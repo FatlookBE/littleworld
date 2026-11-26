@@ -1,6 +1,19 @@
 import type { Building, Villager, World } from "./types";
 import { walkable } from "./navigation";
 
+export function reconstructionSiteIsSafe(w: World, b: Building) {
+  return (
+    w.pressure < 20 &&
+    !w.disasters?.some(
+      (e) =>
+        e.life > 0 &&
+        (e.kind === "quake" ||
+          ((e.kind === "fire" || e.kind === "monster") &&
+            Math.hypot(e.x - b.x, e.y - b.y) < 4)),
+    )
+  );
+}
+
 export function canRebuild(w: World, v: Villager, b: Building) {
   return (
     !v.dead &&
@@ -10,18 +23,13 @@ export function canRebuild(w: World, v: Villager, b: Building) {
     v.energy >= 30 &&
     v.hunger < 50 &&
     v.thirst < 45 &&
-    w.pressure < 20 &&
     w.food > 30 &&
     w.water > 30 &&
     b.condition < 85 &&
     b.type !== "farm" &&
+    reconstructionSiteIsSafe(w, b) &&
     !w.disasters?.some(
-      (e) =>
-        e.life > 0 &&
-        (e.kind === "quake" ||
-          (e.kind === "fight" && e.people.includes(v.id)) ||
-          ((e.kind === "fire" || e.kind === "monster") &&
-            Math.hypot(e.x - b.x, e.y - b.y) < 4)),
+      (e) => e.life > 0 && e.kind === "fight" && e.people.includes(v.id),
     )
   );
 }

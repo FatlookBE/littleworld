@@ -1,7 +1,8 @@
+import { reconstructionSiteIsSafe } from "./reconstruction";
 import { season } from "./seasons";
-import type { Memory, Villager, World } from "./types";
+import type { Building, Memory, Villager, World } from "./types";
 
-type StoryId = "cistern" | "seed-cache" | "lanterns" | "lost-starter";
+type StoryId = "cistern" | "seed-cache" | "lanterns" | "lost-starter" | "carpenter-marks";
 type StoryState = {
   active?: { id: StoryId; phase: 0 | 1; due: number; person: number; helped?: true };
   nextAt: number;
@@ -15,13 +16,17 @@ type Outcome = {
   water?: number;
   food?: number;
   cooperation?: number;
+  repair?: { building: Building; amount: number };
 };
 
-const ids: readonly StoryId[] = ["cistern", "seed-cache", "lanterns", "lost-starter"];
+const ids: readonly StoryId[] = ["cistern", "seed-cache", "lanterns", "lost-starter", "carpenter-marks"];
 const probeEvery = 24;
 const clamp = (value: number) => Math.max(0, Math.min(100, value));
 const bakeryUsable = (w: World) =>
   w.buildings.some((building) => building.type === "bakery" && building.condition >= 35);
+const workshop = (w: World) =>
+  w.buildings.find((building) => building.type === "workshop");
+
 const stories: Record<
   StoryId,
   {
@@ -108,6 +113,30 @@ const stories: Record<
             text: `${v.name} remet le couvercle sur le levain. La fournée attendra des jours meilleurs.`,
           },
   },
+  "carpenter-marks": {
+    when: (w) => {
+      const site = workshop(w);
+      return Boolean(site && site.condition >= 35 && site.condition <= 72 && reconstructionSiteIsSafe(w, site));
+    },
+    lead: (v) =>
+      `${v.name} remarque des encoches sous les poutres abîmées de l’atelier.`,
+    turn: (v) =>
+      `${v.name} comprend les marques du charpentier : elles indiquent où caler la charpente sans tout démonter.`,
+    end: (w, v) => {
+      const site = workshop(w);
+      return site && site.condition >= 35 && site.condition < 85 &&
+        w.cooperation >= 58 && reconstructionSiteIsSafe(w, site)
+        ? {
+            kind: "hope",
+            text: `${v.name} et les voisins consolident la charpente de l’atelier. Ils laissent un tréteau dehors pour les prochaines réparations.`,
+            repair: { building: site, amount: 14 },
+          }
+        : {
+            kind: "ordinary",
+            text: `${v.name} recopie les marques du charpentier. Les travaux attendront que le village puisse s’y mettre.`,
+          };
+    },
+  },
 };
 
 const aid = {
@@ -138,6 +167,13 @@ const aid = {
     cost: 3,
     benefit: 7,
     text: "Une jarre d’eau est réservée pour la fournée commune.",
+  },
+  "carpenter-marks": {
+    label: "Préparer un repas pour les charpentiers",
+    resource: "food",
+    cost: 3,
+    benefit: 8,
+    text: "Un repas attend les voisins qui viendront consolider l’atelier.",
   },
 } as const satisfies Record<
   StoryId,
@@ -232,6 +268,10 @@ export function advanceVillageStories(w: World, note: StoryNote) {
       if (outcome.food) w.food = clamp(w.food + outcome.food);
       if (outcome.cooperation)
         w.cooperation = clamp(w.cooperation + outcome.cooperation);
+      if (outcome.repair) {
+        const { building, amount } = outcome.repair;
+        building.condition = Math.min(85, building.condition + amount);
+      }
       note(outcome.text, outcome.kind, person.id);
       if (outcome.kind === "hope") (state.traces ??= []).push(active.id);
     }

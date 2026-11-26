@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { createWorld } from "./core/engine";
 import { bridgeRows, riverCenter } from "./core/navigation";
-import { drawStoryCue, storyCue, storyTraces } from "./story-scene";
+import { drawStoryCue, drawStoryTrace, storyCue, storyTraces } from "./story-scene";
 
 it("shows no clue before an arc or after it has finished", () => {
   const w = createWorld(0);
@@ -97,4 +97,33 @@ it("leaves independent bridge traces without making a completed story active", (
   expect(lanterns.id).toBe("lanterns");
   expect(cistern.x - lanterns.x).toBeCloseTo(2.4);
   expect(storyCue(w)).toBeNull();
+});
+
+it("stages the carpenter clues by the workshop and keeps only a small trestle after repair", () => {
+  const w = createWorld(0);
+  const site = w.buildings.find((b) => b.type === "workshop")!;
+  w.stories = {
+    nextAt: 0,
+    finished: [],
+    active: { id: "carpenter-marks", phase: 0, due: 300, person: 0 },
+  };
+  const cue = storyCue(w)!;
+  expect(cue).toMatchObject({ label: "À l’atelier", x: site.x + 2.1, y: site.y + 1 });
+  const c = {
+    save: vi.fn(), restore: vi.fn(), translate: vi.fn(), scale: vi.fn(),
+    fillRect: vi.fn(), strokeRect: vi.fn(),
+  };
+  const ctx = c as unknown as CanvasRenderingContext2D;
+  drawStoryCue(ctx, cue, [30, 40], 1);
+  expect(c.strokeRect).toHaveBeenCalledTimes(1);
+  c.strokeRect.mockClear();
+  drawStoryCue(ctx, { ...cue, phase: 1 }, [30, 40], 1);
+  expect(c.strokeRect).toHaveBeenCalledTimes(2);
+  c.strokeRect.mockClear();
+  w.stories = { nextAt: 400, finished: [cue.id], traces: [cue.id] };
+  expect(storyCue(w)).toBeNull();
+  const [trace] = storyTraces(w);
+  drawStoryTrace(ctx, trace, [30, 40], 1);
+  expect(c.strokeRect).toHaveBeenCalledTimes(1);
+  expect(trace).toMatchObject({ id: cue.id, x: cue.x, y: cue.y });
 });
