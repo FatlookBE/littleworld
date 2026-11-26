@@ -52,6 +52,7 @@ import { WorldRenderer } from "./world";
 import { storyCue, storyLandmarks } from "./story-scene";
 import { giveResidentAid, residentAidOptions } from "./core/resident-aid";
 import { marketOffer } from "./core/market";
+import { bakeryState, breadDisplayPosition } from "./core/bakery";
 import { fireAid } from "./core/fire-aid";
 import { rainCollection } from "./core/rain-collection";
 import { contributeToStory, storyAid } from "./core/village-stories";
@@ -423,6 +424,7 @@ function App() {
   const rain = building ? rainCollection(w, building) : null;
   const fire = building ? fireAid(w, building) : null;
   const market = building ? marketOffer(w, building) : null;
+  const bakery = building ? bakeryState(w, building) : null;
   const importFile = async (file: File) => {
     try {
       if (file.size > 8_000_000)
@@ -984,6 +986,29 @@ function App() {
                   >
                     {rain.collected && rain.visible ? "Seaux vidés" : "Vider les seaux dans la réserve"}
                   </button>
+                </section>
+              )}
+              {bakery && (
+                <section className="story-aid" aria-labelledby="bakery-title">
+                  <h3 id="bakery-title">La fournée quotidienne</h3>
+                  <p>
+                    {bakery.fresh
+                      ? "Le pain vient de sortir du four. Les miches sont devant la boulangerie."
+                      : bakery.message ?? "Une fournée rejoint les réserves lorsqu’un adulte vient pétrir ici."}
+                  </p>
+                  {bakery.fresh && building && (
+                    <button className="text-link" onClick={() => {
+                      const r = renderer.current;
+                      if (!r) return;
+                      interaction.current = performance.now();
+                      changeZoom(Math.max(r.zoom, 2.4));
+                      const [x, y] = r.project(...breadDisplayPosition(building));
+                      r.pan[0] += r.width * 0.36 - x;
+                      r.pan[1] += r.height * 0.42 - y;
+                    }}>
+                      Voir les miches ↗
+                    </button>
+                  )}
                 </section>
               )}
               {market && (

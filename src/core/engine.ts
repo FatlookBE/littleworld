@@ -24,6 +24,7 @@ import { spreadDestination, moveResident } from "./crowd";
 import { apocalypse } from "./apocalypse";
 import { sendFireWater } from "./fire-aid";
 import { swapMarketGoods } from "./market";
+import { finishDailyBread } from "./bakery";
 import { advanceNeighbourTalk, talkingPartner } from "./neighbour-talk";
 import { collectRainwater } from "./rain-collection";
 import { advanceVillageStories } from "./village-stories";
@@ -699,6 +700,18 @@ export function step(w: World) {
     (text, person, kind = "warning") => note(w, text, kind, person),
   );
   for (const v of residents(w)) if (v.health <= 0) die(w, v);
+  const bread = finishDailyBread(w);
+  if (bread) {
+    bread.site.events.unshift(
+      note(
+        w,
+        `${bread.baker.name} sort le pain du four : +${bread.breadYield} au garde-manger, −${bread.waterCost} à la réserve d’eau.`,
+        "hope",
+        bread.baker.id,
+      ),
+    );
+    bread.site.events.length = Math.min(bread.site.events.length, 12);
+  }
   advanceNeighbourTalk(w, (text, kind, person) => note(w, text, kind, person));
   const child = welcomeChild(w);
   if (child)
@@ -759,6 +772,7 @@ export function newSession(w: World, now = Date.now()) {
     delete w.stories;
     delete w.rainCollectedAt;
     delete w.marketTradedAt;
+    delete w.breadBakedAt;
     delete w.neighbourTalk;
     const fresh = createWorld(now, w.seed);
     Object.assign(w, {
