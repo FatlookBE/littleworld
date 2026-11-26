@@ -27,7 +27,6 @@ import { AidFeedbacks, drawAidMarker } from "./aid-feedback";
 import { rainCollection } from "./core/rain-collection";
 import { drawRainBuckets } from "./rain-scene";
 import { marketOffer } from "./core/market";
-import { drawMarketStock } from "./market-scene";
 
 type Point = [number, number];
 type Hit = {
@@ -62,6 +61,7 @@ export class WorldRenderer {
   atlas = new ResidentAtlas();
   crops = new AnimationAtlas("/assets/farm-crops.webp", 4, 3, 0, false, true);
   wildlife = new WildlifeRhythm();
+  marketStall = new AnimationAtlas("/assets/market-stall.webp", 2, 1, 0, true);
   hens = new AnimationAtlas("/assets/farm-hens.webp", 4, 6, 0, false, true);
   remains = new AnimationAtlas("/assets/residents-remains.png", 4, 4);
   foundation = new WorldFoundation();
@@ -1286,7 +1286,10 @@ export class WorldRenderer {
       const y = hall.y + 3.6;
       objects.push({
         depth: x + y,
-        draw: () => drawMarketStock(c, this.project(x, y), s, offer.gets),
+        draw: () => {
+          const [px, py] = this.project(x, y);
+          this.marketStall.draw(c, offer.gets === "food" ? 0 : 1, px, py, 42 * s);
+        },
       });
     }
     if (this.crops.ready) {

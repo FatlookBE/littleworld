@@ -136,3 +136,9 @@ La planche transparente `swallow-flight.webp` contient huit poses d’hirondelle
 La planche transparente `painted-props.webp` contient huit cellules de 96 × 96 px, alignées au sol. Rangée du haut : tréteau avec planches, seau, pot à levain, pains sur une planche. Rangée du bas : panier de semences, sac de semences, lanterne, grille de citerne. Les halos et les reflets restent dessinés par le jeu.
 
 Consigne ImageGen, avec `environment-atlas.png` et `waterworks.png` comme références : « Eight isolated miniature medieval village props, elevated three-quarter isometric perspective, worn matte gouache, irregular brown ink edges, warm ochre lighting, muted sage and slate shadows. Loose texture readable at game size, no cast background or ground tile. True alpha, four columns by two rows. » Les objets ont été recadrés par cellule, redimensionnés, centrés horizontalement et alignés en bas avant l’export WebP.
+
+## Étal de troc
+
+`market-stall.webp` : deux cellules de 256 × 256 px, fond alpha transparent. Pains à gauche, seaux à droite. L’atlas conserve un ancrage au pied et une échelle commune pour les deux états. Ces sprites remplacent la composition de petits accessoires et les rectangles de repli ; ils ne changent pas les règles du troc.
+
+Créé avec ImageGen à partir du marché de `environment-atlas.png` comme référence de perspective et de style : « two variants of one small merchant counter, same silhouette and ground, bread on the left, blue-green water buckets on the right; match the existing village outlines, warm wood, beige-red cloth and upper-left lighting; transparent alpha, no background, floor or people ». Le fichier distribué est redimensionné en WebP sans perte.
