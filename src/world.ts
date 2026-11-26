@@ -1,3 +1,4 @@
+import { drawPaintedProp } from "./painted-props";
 import { talkingPartner } from "./core/neighbour-talk";
 import { field, onLane } from "./village-layout";
 import { cropRows, cropRowY, initialGrowth } from "./core/crops";
@@ -28,6 +29,7 @@ import { AidFeedbacks, drawAidMarker } from "./aid-feedback";
 import { rainCollection } from "./core/rain-collection";
 import { drawRainBuckets } from "./rain-scene";
 import { marketOffer } from "./core/market";
+import { bakeryState, breadDisplayPosition } from "./core/bakery";
 
 type Point = [number, number];
 type Hit = {
@@ -1292,6 +1294,17 @@ export class WorldRenderer {
     for (const b of w.buildings)
       if (!["well", "farm", "reservoir"].includes(b.type))
         objects.push({ depth: b.x + b.y + 1.5, draw: () => this.house(b, w) });
+    const bakery = w.buildings.find((b) => b.type === "bakery");
+    if (bakery && bakeryState(w, bakery)?.fresh) {
+      const [x, y] = breadDisplayPosition(bakery);
+      objects.push({
+        depth: x + y,
+        draw: () => {
+          const [px, py] = this.project(x, y);
+          drawPaintedProp(c, "loaves", px, py, 42 * s);
+        },
+      });
+    }
     const hall = w.buildings.find((b) => b.type === "market");
     const offer = hall && marketOffer(w, hall);
     if (hall && offer?.open && !offer.sold) {

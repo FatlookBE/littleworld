@@ -96,6 +96,8 @@ export function restore(text: string): World {
       (!Number.isSafeInteger(w.rainCollectedAt) || !finite(w.rainCollectedAt, 0, w.tick))) ||
     (w.marketTradedAt !== undefined &&
       (!Number.isSafeInteger(w.marketTradedAt) || !finite(w.marketTradedAt, 0, w.tick))) ||
+    (w.breadBakedAt !== undefined &&
+      (!Number.isSafeInteger(w.breadBakedAt) || !finite(w.breadBakedAt, 0, w.tick))) ||
     (w.neighbourTalk !== undefined &&
       !validNeighbourTalk(w.neighbourTalk, w.tick, w.villagers.length)) ||
     !["session", "daily", "persistent"].includes(s.scenario) ||
