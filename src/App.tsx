@@ -53,6 +53,7 @@ import { storyCue, storyLandmarks } from "./story-scene";
 import { giveResidentAid, residentAidOptions } from "./core/resident-aid";
 import { marketOffer } from "./core/market";
 import { bakeryState, breadDisplayPosition } from "./core/bakery";
+import { clinicConsultation, clinicStatus } from "./core/clinic";
 import { fireAid } from "./core/fire-aid";
 import { rainCollection } from "./core/rain-collection";
 import { contributeToStory, storyAid } from "./core/village-stories";
@@ -425,6 +426,8 @@ function App() {
   const fire = building ? fireAid(w, building) : null;
   const market = building ? marketOffer(w, building) : null;
   const bakery = building ? bakeryState(w, building) : null;
+  const clinic = building ? clinicStatus(w, building) : null;
+  const consultation = building && clinic ? clinicConsultation(w, building) : null;
   const importFile = async (file: File) => {
     try {
       if (file.size > 8_000_000)
@@ -986,6 +989,34 @@ function App() {
                   >
                     {rain.collected && rain.visible ? "Seaux vidés" : "Vider les seaux dans la réserve"}
                   </button>
+                </section>
+              )}
+              {clinic && (
+                <section className="story-aid" aria-labelledby="clinic-title">
+                  <h3 id="clinic-title">Les consultations</h3>
+                  <p>
+                    {consultation
+                      ? `${consultation.nurse.name} soigne ${consultation.patient.name} devant la maison de soin.`
+                      : clinic.message ?? "Les habitants blessés peuvent venir ici. Une consultation par jour, avec un soignant sur place."}
+                  </p>
+                  {consultation && building && (
+                    <button
+                      className="text-link"
+                      onClick={() => {
+                        const r = renderer.current;
+                        if (!r) return;
+                        changeZoom(Math.max(r.zoom, 2.4));
+                        const [x, y] = r.project(
+                          (consultation.nurse.x + consultation.patient.x) / 2,
+                          (consultation.nurse.y + consultation.patient.y) / 2,
+                        );
+                        r.pan[0] += r.width * 0.36 - x;
+                        r.pan[1] += r.height * 0.42 - y;
+                      }}
+                    >
+                      Voir la consultation ↗
+                    </button>
+                  )}
                 </section>
               )}
               {bakery && (

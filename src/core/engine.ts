@@ -25,6 +25,7 @@ import { apocalypse } from "./apocalypse";
 import { sendFireWater } from "./fire-aid";
 import { swapMarketGoods } from "./market";
 import { finishDailyBread } from "./bakery";
+import { clinicDestination, deliverClinicCare } from "./clinic";
 import { advanceNeighbourTalk, talkingPartner } from "./neighbour-talk";
 import { collectRainwater } from "./rain-collection";
 import { advanceVillageStories } from "./village-stories";
@@ -285,7 +286,10 @@ function destination(w: World, v: Villager) {
   const hour = (w.tick / 12 + 8) % 24;
   delete v.repairTarget;
   let target: [number, number], action: string;
-  if (v.thirst > 45) {
+  const clinic = clinicDestination(w, v);
+  if (clinic) {
+    ({ target, action } = clinic);
+  } else if (v.thirst > 45) {
     // The riverside pools are only worth the walk while the river still runs.
     const waterStops: [number, number][] = [
       [13.5, 14.5],
@@ -700,6 +704,20 @@ export function step(w: World) {
     (text, person, kind = "warning") => note(w, text, kind, person),
   );
   for (const v of residents(w)) if (v.health <= 0) die(w, v);
+  const care = deliverClinicCare(w);
+  if (care) {
+    const { site, nurse, patient, cost, gain } = care;
+    const memory = note(
+      w,
+      `${nurse.name} soigne ${patient.name} : +${gain} santé, −${cost} à la réserve d’eau.`,
+      "hope",
+      patient.id,
+    );
+    site.events.unshift(memory);
+    site.events.length = Math.min(site.events.length, 12);
+    nurse.memories.unshift(memory);
+    nurse.memories.length = Math.min(nurse.memories.length, 24);
+  }
   const bread = finishDailyBread(w);
   if (bread) {
     bread.site.events.unshift(
@@ -773,6 +791,7 @@ export function newSession(w: World, now = Date.now()) {
     delete w.rainCollectedAt;
     delete w.marketTradedAt;
     delete w.breadBakedAt;
+    delete w.clinicTreatedAt;
     delete w.neighbourTalk;
     const fresh = createWorld(now, w.seed);
     Object.assign(w, {

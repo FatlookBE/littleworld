@@ -110,6 +110,7 @@ export interface World {
   rainCollectedAt?: number;
   marketTradedAt?: number;
   breadBakedAt?: number;
+  clinicTreatedAt?: number;
   neighbourTalk?: import("./neighbour-talk").NeighbourTalk;
   villagers: Villager[];
   buildings: Building[];
