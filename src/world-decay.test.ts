@@ -1,4 +1,5 @@
 import { expect, it } from "vitest";
+import { AidFeedbacks } from "./aid-feedback";
 import { WorldRenderer } from "./world";
 import { createWorld } from "./core/engine";
 import { decayOf } from "./foundation";
@@ -18,6 +19,7 @@ it("keeps rendered decay identical in pause, across frame rates and on reload", 
       height: 720,
       zoom: 1,
       decay: 0,
+      aidFeedbacks: new AidFeedbacks(),
       waterLevel: { update() {} },
       ctx: {
         clearRect() {

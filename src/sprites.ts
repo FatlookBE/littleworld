@@ -3,6 +3,7 @@ import { loadPaintedImage } from "./asset-status";
 import { nutritionStage } from "./core/nutrition";
 import { residentAction, residentActionTime } from "./resident-actions";
 import { AnimationAtlas, loopFrame } from "./animation";
+import { aidPose, type AidFeedback } from "./aid-feedback";
 import { ExtraResidentAtlases } from "./extra-residents";
 import type { Villager, World } from "./core/types";
 // Source pixels in the user's original 1536×1024 atlas. Anchors are foot positions,
@@ -280,12 +281,13 @@ export class ResidentAtlas {
     x: number,
     y: number,
     scale: number,
+    feedback?: AidFeedback,
   ) {
     ctx.save();
     const wear = Math.min(1, (v.malnutrition ?? 0) / 55);
     if (wear > 0)
       ctx.filter = `saturate(${1 - wear * 0.3}) brightness(${1 - wear * 0.08})`;
-    const drawn = this.drawBody(ctx, v, w, time, x, y, scale);
+    const drawn = this.drawBody(ctx, v, w, time, x, y, scale, feedback);
     ctx.restore();
     return drawn;
   }
@@ -297,11 +299,12 @@ export class ResidentAtlas {
     x: number,
     y: number,
     scale: number,
+    feedback?: AidFeedback,
   ) {
     const youth = youthStage(v.age);
     if (youth) return this.young.draw(youth, ctx, v, w, time, x, y, scale);
     const skin = residentSkin(v.id);
-    if (skin >= 4) return this.extra.draw(ctx, skin, v, w, time, x, y, scale);
+    if (skin >= 4) return this.extra.draw(ctx, skin, v, w, time, x, y, scale, feedback);
     const gaunt = nutritionStage(v) === 2;
     const reactions =
       gaunt && this.gauntReactions.ready ? this.gauntReactions : this.reactions;
@@ -319,7 +322,8 @@ export class ResidentAtlas {
         v.hitSide === 1,
       );
     }
-    const activity = residentAction(v, w);
+    const gift = aidPose(v, w, feedback);
+    const activity = gift?.activity ?? residentAction(v, w);
     const activityAtlas = activity
       ? gaunt
         ? this.gauntActivities[activity]
@@ -329,8 +333,9 @@ export class ResidentAtlas {
     if (activityAtlas?.ready) {
       const moving = v.route.length > 0;
       const target = v.route[0] ?? v.target;
-      const phase =
-        activity === "carry" && !moving
+      const phase = gift
+        ? w.settings.reducedMotion ? 2 : Math.floor(gift.elapsed / 200)
+        : activity === "carry" && !moving
           ? 0
           : loopFrame(
               residentActionTime(v, time),

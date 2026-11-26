@@ -5,11 +5,11 @@ const supplies = {
   food: { need: "hunger", threshold: 50, relief: 25, cost: 5, label: "Offrir un repas" },
 } as const;
 
-type Supply = keyof typeof supplies;
+export type ResidentAidSupply = keyof typeof supplies;
 const items = ["water", "food"] as const;
 export const residentAidRestTicks = 60;
 
-function option(w: World, v: Villager, supply: Supply) {
+function option(w: World, v: Villager, supply: ResidentAidSupply) {
   const item = supplies[supply];
   const reason = v.dead
     ? "Cet habitant est décédé."
@@ -27,7 +27,7 @@ export function residentAidOptions(w: World, v: Villager) {
   return items.map((supply) => option(w, v, supply));
 }
 
-export function giveResidentAid(w: World, resident: number, supply: Supply) {
+export function giveResidentAid(w: World, resident: number, supply: ResidentAidSupply) {
   const v = w.villagers[resident];
   if (!v || v.id !== resident) return null;
   const item = option(w, v, supply);
