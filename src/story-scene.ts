@@ -1,3 +1,4 @@
+import type { AnimationAtlas } from "./animation";
 import { bridgeRows, riverCenter } from "./core/navigation";
 import type { World } from "./core/types";
 import { drawPaintedProp } from "./painted-props";
@@ -49,11 +50,17 @@ export function storyTraces(w: StoryWorld): StorySite[] {
   return (w.stories?.traces ?? []).flatMap((id) => {
     const site = storySite(w, id);
     if (!site) return [];
-    // Two stories share this bridge; use opposite ends, away from the active cue.
-    if (id === "lanterns") site.x -= 1.2;
-    if (id === "cistern") site.x += 1.2;
-    // Keepsakes sit on the frontage, clear of nearby roofs in the painted view.
-    if (id === "seed-cache" || id === "lost-starter") site.y += 1;
+    // Leave the bridge deck for active clues, and the keepsakes on dry ground.
+    if (id === "lanterns" || id === "cistern") {
+      site.y += 0.85;
+      site.x = riverCenter(site.y) + (id === "lanterns" ? -2.15 : 2.45);
+    }
+    // Beside the Hall, instead of behind the clinic roof or above the market stall.
+    if (id === "seed-cache") {
+      site.x -= 1.6;
+      site.y -= 0.45;
+    }
+    if (id === "lost-starter") site.y += 1;
     if (id === "carpenter-marks") site.y += 1.8;
     return [site];
   });
@@ -93,50 +100,30 @@ export function drawLandmarkRing(
   c.restore();
 }
 
-/** Permanent props are muted and have no glow or active-event affordance. */
+const traceFrames = {
+  cistern: 0,
+  lanterns: 1,
+  "seed-cache": 2,
+  "lost-starter": 3,
+} as const;
+
+/** Permanent props use sprites only, with no glow or active-event affordance. */
 export function drawStoryTrace(
   c: CanvasRenderingContext2D,
   trace: StorySite,
   screen: [number, number],
   scale: number,
+  atlas: Pick<AnimationAtlas, "draw">,
 ) {
-  c.save();
-  c.translate(...screen);
-  c.scale(scale, scale);
-  c.strokeStyle = "#382d24";
-  c.lineWidth = 1;
-  if (trace.id === "cistern") {
-    c.fillStyle = "#7b9083";
-    c.fillRect(-6, -6, 12, 7);
-    c.strokeRect(-6, -6, 12, 7);
-    c.fillStyle = "#b8ccc0";
-    c.fillRect(-3, -4, 6, 2);
-  } else if (trace.id === "lanterns") {
-    c.fillStyle = "#8d6848";
-    c.fillRect(-1, -12, 2, 13);
-    c.fillRect(-5, -12, 10, 6);
-    c.strokeRect(-5, -12, 10, 6);
-    c.fillStyle = "#c3a56e";
-    for (const x of [-3, 1]) c.fillRect(x, -10, 2, 2);
-  } else if (trace.id === "seed-cache") {
-    c.fillStyle = "#906848";
-    c.fillRect(-8, -6, 16, 7);
-    c.strokeRect(-8, -6, 16, 7);
-    c.fillStyle = "#9ca46a";
-    for (const x of [-6, -1, 4]) c.fillRect(x, -10, 3, 4);
-  } else if (trace.id === "carpenter-marks") {
-    drawWorkshopProps(c, 0, true);
-  } else {
-    c.fillStyle = "#a87856";
-    for (const x of [-6, 2]) {
-      c.fillRect(x, -6, 5, 7);
-      c.strokeRect(x, -6, 5, 7);
-      c.fillStyle = "#dec39a";
-      c.fillRect(x - 1, -8, 7, 2);
-      c.fillStyle = "#a87856";
-    }
+  if (trace.id === "carpenter-marks") {
+    c.save();
+    c.translate(...screen);
+    c.scale(scale, scale);
+    drawPaintedProp(c, "sawhorse", 0, 2, 18);
+    c.restore();
+    return;
   }
-  c.restore();
+  atlas.draw(c, traceFrames[trace.id], ...screen, 24 * scale);
 }
 
 /** Draw props at the event site, rather than decorating the currently selected villager. */
@@ -188,7 +175,7 @@ export function drawStoryCue(
       c.stroke();
     }
   } else if (cue.id === "carpenter-marks") {
-    drawWorkshopProps(c, cue.phase, false);
+    drawWorkshopProps(c, cue.phase);
   } else if (cue.id === "lost-starter") {
     const painted = drawPaintedProp(c, "starter", cue.phase === 0 ? 0 : -6, 1, 24);
     if (painted && cue.phase === 1) drawPaintedProp(c, "loaves", 10, 2, 20);
@@ -204,10 +191,9 @@ export function drawStoryCue(
 function drawWorkshopProps(
   c: CanvasRenderingContext2D,
   phase: Cue["phase"],
-  trace: boolean,
 ) {
   const x = phase === 1 ? -4 : 0;
-  if (!drawPaintedProp(c, "sawhorse", x, 2, trace ? 18 : 25)) {
+  if (!drawPaintedProp(c, "sawhorse", x, 2, 25)) {
     c.fillStyle = "#8e6446";
     c.fillRect(x - 2, -10, 2, 11);
     c.fillRect(x + 5, -10, 2, 11);

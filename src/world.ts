@@ -61,6 +61,13 @@ export class WorldRenderer {
   atlas = new ResidentAtlas();
   crops = new AnimationAtlas("/assets/farm-crops.webp", 4, 3, 0, false, true);
   wildlife = new WildlifeRhythm();
+  storyKeepsakes = new AnimationAtlas(
+    "/assets/story-keepsakes.webp",
+    2,
+    2,
+    0,
+    true,
+  );
   marketStall = new AnimationAtlas("/assets/market-stall.webp", 2, 1, 0, true);
   hens = new AnimationAtlas("/assets/farm-hens.webp", 4, 6, 0, false, true);
   remains = new AnimationAtlas("/assets/residents-remains.png", 4, 4);
@@ -1373,7 +1380,14 @@ export class WorldRenderer {
     for (const trace of storyTraces(w)) {
       objects.push({
         depth: trace.x + trace.y,
-        draw: () => drawStoryTrace(c, trace, this.project(trace.x, trace.y), s),
+        draw: () =>
+          drawStoryTrace(
+            c,
+            trace,
+            this.project(trace.x, trace.y),
+            s,
+            this.storyKeepsakes,
+          ),
       });
     }
     for (const site of repairSites(w)) {
