@@ -686,6 +686,17 @@
   font-weight: normal;
   color: #b8c49f;
 }
+.story-landmarks {
+  margin-block: 16px 24px;
+}
+.story-landmarks .resident-row {
+  justify-content: space-between;
+}
+.story-landmarks ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
 .timeline {
   list-style: none;
   padding: 0 0 0 13px;

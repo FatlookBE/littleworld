@@ -52,8 +52,45 @@ export function storyTraces(w: StoryWorld): StorySite[] {
     // Two stories share this bridge; use opposite ends, away from the active cue.
     if (id === "lanterns") site.x -= 1.2;
     if (id === "cistern") site.x += 1.2;
+    // Keepsakes sit on the frontage, clear of nearby roofs in the painted view.
+    if (id === "seed-cache" || id === "lost-starter") site.y += 1;
+    if (id === "carpenter-marks") site.y += 1.8;
     return [site];
   });
+}
+
+const keepsakes: Record<Story["id"], string> = {
+  cistern: "La plaque de la citerne",
+  lanterns: "Le panneau des lanternes",
+  "seed-cache": "Le bac des semis",
+  "lost-starter": "Les pots de levain",
+  "carpenter-marks": "Le tréteau des charpentiers",
+};
+
+/** Only show props that physically exist, never past or future clues. */
+export function storyLandmarks(w: StoryWorld) {
+  return storyTraces(w).reverse().map((trace) => ({
+    ...trace,
+    name: keepsakes[trace.id],
+  }));
+}
+
+export function drawLandmarkRing(
+  c: CanvasRenderingContext2D,
+  [x, y]: [number, number],
+  scale: number,
+) {
+  const radius = Math.max(12, 11 * scale);
+  c.save();
+  c.beginPath();
+  c.ellipse(x, y + 3 * scale, radius, radius * 0.4, 0, 0, Math.PI * 2);
+  c.lineWidth = 4;
+  c.strokeStyle = "#2d2119";
+  c.stroke();
+  c.lineWidth = 2;
+  c.strokeStyle = "#f3d191";
+  c.stroke();
+  c.restore();
 }
 
 /** Permanent props are muted and have no glow or active-event affordance. */
