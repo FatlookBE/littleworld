@@ -23,6 +23,7 @@ import {
   newSession,
   setScenario,
   catchUp,
+  harvestRainwater,
   note,
   syncDay,
 } from "./core/engine";
@@ -47,6 +48,7 @@ import type { World, Scenario } from "./core/types";
 import { WorldRenderer } from "./world";
 import { storyCue } from "./story-scene";
 import { giveResidentAid, residentAidOptions } from "./core/resident-aid";
+import { rainCollection } from "./core/rain-collection";
 import { contributeToStory, storyAid } from "./core/village-stories";
 import { daylight } from "./daylight";
 import { daysToNextSeason, season, seasonNames } from "./core/seasons";
@@ -404,6 +406,7 @@ function App() {
   };
   const person = selected?.kind === "person" ? w.villagers[selected.id] : null,
     building = selected?.kind === "building" ? w.buildings[selected.id] : null;
+  const rain = building ? rainCollection(w, building) : null;
   const importFile = async (file: File) => {
     try {
       if (file.size > 8_000_000)
@@ -905,6 +908,34 @@ function App() {
                       : w.food
                 }
               />
+              {rain && (
+                <section className="story-aid" aria-labelledby="rain-collection-title">
+                  <h3 id="rain-collection-title">Les seaux de pluie</h3>
+                  <p id="rain-collection-details">
+                    {rain.unavailable ?? `+${rain.amount} points d’eau dans la réserve, une fois par averse.`}
+                  </p>
+                  <button
+                    type="button"
+                    className="primary"
+                    aria-describedby="rain-collection-details"
+                    aria-disabled={rain.unavailable !== null}
+                    onClick={() => {
+                      if (rain.unavailable) return;
+                      const current = world.current;
+                      const text = harvestRainwater(current, building.id);
+                      update();
+                      if (text) {
+                        saveWorld(current).catch(() => {
+                          setSaveStatus("Échec de sauvegarde — export conseillé");
+                        });
+                      }
+                      announce(text ?? "Les seaux ne peuvent plus être vidés.");
+                    }}
+                  >
+                    {rain.collected && rain.visible ? "Seaux vidés" : "Vider les seaux dans la réserve"}
+                  </button>
+                </section>
+              )}
               <CauseList
                 title="Ce qui agit sur ce lieu"
                 causes={buildingCauses(w, building)}

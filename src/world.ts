@@ -23,6 +23,8 @@ import type { World, Building, Villager } from "./core/types";
 import { drawStoryCue, drawStoryTrace, storyCue, storyTraces } from "./story-scene";
 import { drawRepairSite, repairSites } from "./repair-scene";
 import { AidFeedbacks, drawAidMarker } from "./aid-feedback";
+import { rainCollection } from "./core/rain-collection";
+import { drawRainBuckets } from "./rain-scene";
 
 type Point = [number, number];
 type Hit = {
@@ -1241,6 +1243,15 @@ export class WorldRenderer {
       );
     else this.box(23, 8, 2.7, 2.5, 7, "#a5a581", "#707e6a", "#87927a");
     this.hits.push({ x: rx, y: ry, id: 13, kind: "building" });
+    const reservoir = w.buildings[13];
+    const catchment = rainCollection(w, reservoir);
+    if (catchment?.visible) {
+      const x = reservoir.x + 3.15, y = reservoir.y + 2.35;
+      objects.push({
+        depth: x + y,
+        draw: () => drawRainBuckets(c, this.project(x, y), s, !catchment.unavailable),
+      });
+    }
     for (const row of [6, 23]) {
       const [px, py] = this.project(riverCenter(row) + 2.2, row + 0.5);
       if (this.waterworks.ready)
