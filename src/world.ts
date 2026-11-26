@@ -21,7 +21,7 @@ import { WaterLevel, Waterfall, waterHalfWidth } from "./water";
 import { daylight, goldenHour } from "./daylight";
 import { autumnColour, bareBranches, snowCover } from "./core/seasons";
 import type { World, Building, Villager } from "./core/types";
-import { drawStoryCue, drawStoryTrace, storyCue, storyTraces } from "./story-scene";
+import { drawLandmarkRing, drawStoryCue, drawStoryTrace, storyCue, storyTraces } from "./story-scene";
 import { drawRepairSite, repairSites } from "./repair-scene";
 import { AidFeedbacks, drawAidMarker } from "./aid-feedback";
 import { rainCollection } from "./core/rain-collection";
@@ -118,6 +118,20 @@ export class WorldRenderer {
   time = 0;
   readonly aidFeedbacks = new AidFeedbacks();
   private frameNow = 0;
+  private landmark?: { position: Point; until: number };
+  private scaleForZoom() {
+    return (
+      Math.min(this.width / 1500, Math.max(220, this.height - 280) / 1650) *
+      this.zoom
+    );
+  }
+  locateLandmark(x: number, y: number, now: number) {
+    this.scale = this.scaleForZoom();
+    const [px, py] = this.project(x, y);
+    this.pan[0] += this.width * 0.5 - px;
+    this.pan[1] += this.height * 0.43 - py;
+    this.landmark = { position: [x, y], until: now + 5000 };
+  }
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d")!;
@@ -872,9 +886,7 @@ export class WorldRenderer {
     this.time = w.settings.reducedMotion ? 0 : time;
     this.wildlife.update(w, time, w.settings.reducedMotion);
     this.waterLevel.update(w.water, time, w.settings.reducedMotion);
-    this.scale =
-      Math.min(this.width / 1500, Math.max(220, this.height - 280) / 1650) *
-      this.zoom;
+    this.scale = this.scaleForZoom();
     const c = this.ctx,
       p = w.pressure / 100,
       s = this.scale;
@@ -1472,6 +1484,9 @@ export class WorldRenderer {
     this.lighting(w);
     const cue = storyCue(w);
     if (cue) drawStoryCue(c, cue, this.project(cue.x, cue.y), this.scale);
+    if (this.landmark && this.frameNow < this.landmark.until) {
+      drawLandmarkRing(c, this.project(...this.landmark.position), s);
+    }
   }
   /** Light follows the displayed clock: golden dawn and dusk, lit homes at night. */
   lighting(w: World) {

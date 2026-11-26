@@ -47,7 +47,7 @@ import {
 import { loadWorld, saveWorld, restore } from "./core/persistence";
 import type { World, Scenario } from "./core/types";
 import { WorldRenderer } from "./world";
-import { storyCue } from "./story-scene";
+import { storyCue, storyLandmarks } from "./story-scene";
 import { giveResidentAid, residentAidOptions } from "./core/resident-aid";
 import { fireAid } from "./core/fire-aid";
 import { rainCollection } from "./core/rain-collection";
@@ -364,6 +364,7 @@ function App() {
   const population = residents(w).length,
     latest = w.chronicle[0];
   const cue = storyCue(w);
+  const landmarks = panel === "chronicle" || focus ? storyLandmarks(w) : [];
   const aid = panel === "chronicle" ? storyAid(w) : null;
   const dailyUsage = dailyFresh(w);
   const todayTokens = dailyUsage.get(w.day) ?? 0;
@@ -623,7 +624,7 @@ function App() {
         >
           ▣
         </button>
-        {focus && cue && !panel && !selected && (
+        {focus && (cue || landmarks.length > 0) && !panel && !selected && (
           <button
             type="button"
             className="focus-story-entry"
@@ -634,7 +635,8 @@ function App() {
               requestAnimationFrame(() => chronicleHeading.current?.focus());
             }}
           >
-            <span aria-hidden="true">◈</span> Événement en cours
+            <span aria-hidden="true">◈</span>{" "}
+            {cue ? "Événement en cours" : "Traces du village"}
           </button>
         )}
       </div>
@@ -1086,6 +1088,39 @@ function App() {
                       ? "Aide apportée"
                       : aid.affordable ? aid.label : "Réserves insuffisantes"}
                   </button>
+                </section>
+              )}
+              {landmarks.length > 0 && (
+                <section className="story-landmarks" aria-labelledby="landmarks-title">
+                  <h3 id="landmarks-title">Traces du village</h3>
+                  <ul>
+                    {landmarks.map(({ id, x, y, name, label }) => (
+                      <li key={id}>
+                        <button
+                          type="button"
+                          className="resident-row"
+                          onClick={() => {
+                            const r = renderer.current;
+                            if (!r) return;
+                            changeZoom(Math.max(zoom, 3));
+                            r.locateLandmark(x, y, interaction.current);
+                            close(false);
+                            announce(`${name} · ${label}`);
+                            requestAnimationFrame(() => canvas.current?.focus());
+                          }}
+                        >
+                          <span>
+                            {name}
+                            <small>{label}</small>
+                          </span>
+                          <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor">
+                            <circle cx="8" cy="8" r="5" />
+                            <path d="M8 1v4m0 6v4M1 8h4m6 0h4" />
+                          </svg>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
                 </section>
               )}
               <ol className="timeline">

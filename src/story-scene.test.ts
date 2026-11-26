@@ -1,7 +1,7 @@
 import { expect, it, vi } from "vitest";
 import { createWorld } from "./core/engine";
 import { bridgeRows, riverCenter } from "./core/navigation";
-import { drawStoryCue, drawStoryTrace, storyCue, storyTraces } from "./story-scene";
+import { drawStoryCue, drawStoryTrace, storyCue, storyLandmarks, storyTraces } from "./story-scene";
 
 it("shows no clue before an arc or after it has finished", () => {
   const w = createWorld(0);
@@ -125,5 +125,28 @@ it("stages the carpenter clues by the workshop and keeps only a small trestle af
   const [trace] = storyTraces(w);
   drawStoryTrace(ctx, trace, [30, 40], 1);
   expect(c.strokeRect).toHaveBeenCalledTimes(1);
-  expect(trace).toMatchObject({ id: cue.id, x: cue.x, y: cue.y });
+  expect(trace).toMatchObject({ id: cue.id, x: cue.x });
+  expect(trace.y).toBeCloseTo(site.y + 2.8);
+});
+
+it("indexes only physical traces, most recent first, at their rendered positions", () => {
+  const w = createWorld(0);
+  w.stories = {
+    nextAt: 90,
+    finished: ["cistern", "seed-cache", "lanterns"],
+    traces: ["cistern", "lanterns"],
+    active: { id: "lost-starter", phase: 1, due: 300, person: 0 },
+  };
+  const [cistern, lanterns] = storyTraces(w);
+  expect(storyLandmarks(w)).toEqual([
+    { ...lanterns, name: "Le panneau des lanternes" },
+    { ...cistern, name: "La plaque de la citerne" },
+  ]);
+  expect(w.stories.traces).toEqual(["cistern", "lanterns"]);
+});
+
+it("does not turn old saves with only completed story IDs into landmarks", () => {
+  const w = createWorld(0);
+  w.stories = { nextAt: 90, finished: ["cistern", "lanterns"] };
+  expect(storyLandmarks(w)).toEqual([]);
 });
