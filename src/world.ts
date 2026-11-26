@@ -1,3 +1,4 @@
+import { talkingPartner } from "./core/neighbour-talk";
 import { field, onLane } from "./village-layout";
 import { cropRows, cropRowY, initialGrowth } from "./core/crops";
 import { doorStep } from "./core/home-visits";
@@ -735,7 +736,12 @@ export class WorldRenderer {
     }
     this.ellipse(sx + 2 * s, sy + 1 * s, 4, 2, "#2c3c3545");
     const feedback = this.aidFeedbacks.forResident(v.id, this.frameNow);
-    if (!this.atlas.draw(c, v, w, this.time, sx, sy, s, feedback)) {
+    const companion = talkingPartner(w, v);
+    // Face the other resident with the original idle sprites without changing navigation.
+    const pose: Villager = companion
+      ? { ...v, target: [companion.x, companion.y], action: "Discute" }
+      : v;
+    if (!this.atlas.draw(c, pose, w, this.time, sx, sy, s, feedback)) {
       const colors = [
         "#8b5747",
         "#d4b45d",

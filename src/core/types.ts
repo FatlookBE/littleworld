@@ -109,6 +109,7 @@ export interface World {
   weather: string;
   rainCollectedAt?: number;
   marketTradedAt?: number;
+  neighbourTalk?: import("./neighbour-talk").NeighbourTalk;
   villagers: Villager[];
   buildings: Building[];
   chronicle: Memory[];

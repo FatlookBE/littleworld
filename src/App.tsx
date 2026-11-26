@@ -1,3 +1,4 @@
+import { talkingPartner } from "./core/neighbour-talk";
 import { youthStage } from "./young-residents";
 import { villageCapacity } from "./core/population";
 import { LocalDiagnostics } from "./LocalDiagnostics";
@@ -416,6 +417,9 @@ function App() {
   };
   const person = selected?.kind === "person" ? w.villagers[selected.id] : null,
     building = selected?.kind === "building" ? w.buildings[selected.id] : null;
+  const companion = person && talkingPartner(w, person);
+  const firstSpeaker = w.neighbourTalk && w.villagers[w.neighbourTalk.first];
+  const secondSpeaker = firstSpeaker && talkingPartner(w, firstSpeaker);
   const rain = building ? rainCollection(w, building) : null;
   const fire = building ? fireAid(w, building) : null;
   const market = building ? marketOffer(w, building) : null;
@@ -823,7 +827,11 @@ function App() {
               </div>
               <p className="current-action">
                 <span />
-                {person.dead ? remainsLabel(person, w.tick) : person.action}
+                {person.dead
+                  ? remainsLabel(person, w.tick)
+                  : companion
+                    ? `Discute avec ${companion.name}`
+                    : person.action}
               </p>
               {!person.dead && (
                 <>
@@ -1084,6 +1092,29 @@ function App() {
           {panel === "chronicle" && (
             <>
               <h2 ref={chronicleHeading} tabIndex={-1}>La chronique</h2>
+              {firstSpeaker && secondSpeaker && (
+                <p>
+                  En ce moment : {firstSpeaker.name} et {secondSpeaker.name} font une pause pour discuter.{" "}
+                  <button
+                    className="text-link"
+                    onClick={() => {
+                      const r = renderer.current;
+                      if (r) {
+                        changeZoom(Math.max(r.zoom, 2.4));
+                        const [x, y] = r.project(
+                          (firstSpeaker.x + secondSpeaker.x) / 2,
+                          (firstSpeaker.y + secondSpeaker.y) / 2,
+                        );
+                        r.pan[0] += r.width * 0.36 - x;
+                        r.pan[1] += r.height * 0.42 - y;
+                      }
+                      choose({ kind: "person", id: firstSpeaker.id });
+                    }}
+                  >
+                    Voir {firstSpeaker.name} ↗
+                  </button>
+                </p>
+              )}
               <p className="muted">Les petites choses qui changent tout.</p>
               {cue && (
                 <button

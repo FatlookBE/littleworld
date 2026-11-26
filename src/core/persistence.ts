@@ -1,3 +1,4 @@
+import { validNeighbourTalk } from "./neighbour-talk";
 import { maxFireAidTicks } from "./fire-aid";
 import { residentAidRestTicks } from "./resident-aid";
 import { cropRows } from "./crops";
@@ -95,6 +96,8 @@ export function restore(text: string): World {
       (!Number.isSafeInteger(w.rainCollectedAt) || !finite(w.rainCollectedAt, 0, w.tick))) ||
     (w.marketTradedAt !== undefined &&
       (!Number.isSafeInteger(w.marketTradedAt) || !finite(w.marketTradedAt, 0, w.tick))) ||
+    (w.neighbourTalk !== undefined &&
+      !validNeighbourTalk(w.neighbourTalk, w.tick, w.villagers.length)) ||
     !["session", "daily", "persistent"].includes(s.scenario) ||
     !finite(s.budget, 1000, 1e9) ||
     !finite(s.curve, 0.5, 2) ||
