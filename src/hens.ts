@@ -29,3 +29,32 @@ export function foragingHens(time: number) {
     };
   });
 }
+
+// Four separate spots in the lee of the farmhouse, north of the crop rows.
+const shelter: readonly [number, number][] = [
+  [8.45, 19.6],
+  [9.1, 19.84],
+  [10, 19.95],
+  [10.65, 20.14],
+];
+
+export function villageHens(
+  time: number,
+  cover: number,
+  headingToCover: boolean,
+  reducedMotion: boolean,
+) {
+  return foragingHens(reducedMotion ? 0 : time).map((hen, i) => {
+    const [sx, sy] = shelter[i];
+    const progress = Math.max(0, Math.min(1, (cover - i * 0.045) / (1 - i * 0.045)));
+    if (!progress) return reducedMotion ? { ...hen, frame: 0 } : hen;
+    const toward = sx - hen.x < sy - hen.y;
+    return {
+      ...hen,
+      x: hen.x + (sx - hen.x) * progress,
+      y: hen.y + (sy - hen.y) * progress,
+      mirror: progress === 1 ? i % 2 === 0 : toward === headingToCover,
+      frame: reducedMotion || progress === 1 ? 0 : loopFrame(time, 4, 11, i),
+    };
+  });
+}
