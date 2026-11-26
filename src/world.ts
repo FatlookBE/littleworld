@@ -1,3 +1,4 @@
+import { bridgeLight, bridgeLanternSites } from "./bridge-lights";
 import { drawPaintedProp } from "./painted-props";
 import { talkingPartner } from "./core/neighbour-talk";
 import { field, onLane } from "./village-layout";
@@ -1294,6 +1295,22 @@ export class WorldRenderer {
     for (const b of w.buildings)
       if (!["well", "farm", "reservoir"].includes(b.type))
         objects.push({ depth: b.x + b.y + 1.5, draw: () => this.house(b, w) });
+    const bridge = bridgeLight(w, w.tick + (w.settings.reducedMotion ? 0 : this.interpolation));
+    const litLamps: [number, number][] = [];
+    if (bridge?.strength) {
+      for (const [x, y] of bridgeLanternSites) {
+        objects.push({
+          depth: x + y,
+          draw: () => {
+            const [px, py] = this.project(x, y);
+            c.save();
+            c.globalAlpha = bridge.strength;
+            if (drawPaintedProp(c, "lantern", px, py, 34 * s)) litLamps.push([px, py]);
+            c.restore();
+          },
+        });
+      }
+    }
     const bakery = w.buildings.find((b) => b.type === "bakery");
     if (bakery && bakeryState(w, bakery)?.fresh) {
       const [x, y] = breadDisplayPosition(bakery);
@@ -1529,7 +1546,7 @@ export class WorldRenderer {
       }
     }
     this.apocalypseScene(w);
-    this.lighting(w);
+    this.lighting(w, litLamps, bridge?.strength ?? 0);
     const cue = storyCue(w);
     if (cue) drawStoryCue(c, cue, this.project(cue.x, cue.y), this.scale);
     if (this.landmark && this.frameNow < this.landmark.until) {
@@ -1537,7 +1554,7 @@ export class WorldRenderer {
     }
   }
   /** Light follows the displayed clock: golden dawn and dusk, lit homes at night. */
-  lighting(w: World) {
+  lighting(w: World, lamps: [number, number][] = [], lampStrength = 0) {
     const c = this.ctx,
       s = this.scale;
     const tick = w.tick + (w.settings.reducedMotion ? 0 : this.interpolation);
@@ -1584,6 +1601,9 @@ export class WorldRenderer {
         night * 0.3 * flicker * (0.5 + b.condition / 200),
       );
     }
+    // These halos illuminate atlas sprites already drawn in the world depth pass.
+    for (const [x, y] of lamps)
+      glow(x + 4 * s, y - 11 * s, 43 * s, lampStrength * 0.46);
     // Walkers out after dark carry a small lantern.
     for (const v of w.villagers) {
       if (v.dead || !v.route.length) continue;

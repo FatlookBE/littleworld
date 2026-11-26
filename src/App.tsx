@@ -1,3 +1,4 @@
+import { bridgeLight } from "./bridge-lights";
 import { talkingPartner } from "./core/neighbour-talk";
 import { youthStage } from "./young-residents";
 import { villageCapacity } from "./core/population";
@@ -1208,7 +1209,7 @@ function App() {
                         >
                           <span>
                             {name}
-                            <small>{label}</small>
+                            <small>{id === "lanterns" ? bridgeLight(w)?.label ?? label : label}</small>
                           </span>
                           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor">
                             <circle cx="8" cy="8" r="5" />
