@@ -108,6 +108,7 @@ export interface World {
   unrest: number;
   weather: string;
   rainCollectedAt?: number;
+  marketTradedAt?: number;
   villagers: Villager[];
   buildings: Building[];
   chronicle: Memory[];

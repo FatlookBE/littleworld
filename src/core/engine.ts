@@ -23,6 +23,7 @@ import { updateNutrition } from "./nutrition";
 import { spreadDestination, moveResident } from "./crowd";
 import { apocalypse } from "./apocalypse";
 import { sendFireWater } from "./fire-aid";
+import { swapMarketGoods } from "./market";
 import { collectRainwater } from "./rain-collection";
 import { advanceVillageStories } from "./village-stories";
 import type { World, Memory, Villager, Scenario } from "./types";
@@ -116,6 +117,15 @@ export function supportFireCrew(w: World, buildingId: number) {
   if (!site) return null;
   const text = `Un renfort d’eau affaiblit l’incendie près de « ${site.name} ».`;
   site.events.unshift(note(w, text, "hope"));
+  site.events.length = Math.min(site.events.length, 12);
+  return text;
+}
+export function tradeAtMarket(w: World, buildingId: number) {
+  const trade = swapMarketGoods(w, buildingId);
+  if (!trade) return null;
+  const { site, offer } = trade;
+  const text = `Troc à la Halle : ${offer.terms}.`;
+  site.events.unshift(note(w, text, "ordinary"));
   site.events.length = Math.min(site.events.length, 12);
   return text;
 }
@@ -745,6 +755,7 @@ export function newSession(w: World, now = Date.now()) {
     delete w.disasters;
     delete w.stories;
     delete w.rainCollectedAt;
+    delete w.marketTradedAt;
     const fresh = createWorld(now, w.seed);
     Object.assign(w, {
       ...fresh,

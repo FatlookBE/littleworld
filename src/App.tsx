@@ -12,7 +12,7 @@ import {
 import { readUsageBridge } from "./usage-bridge";
 import { remainsLabel } from "./core/lifecycle";
 import { residentSkin } from "./sprites";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   createWorld,
   step,
@@ -25,6 +25,7 @@ import {
   catchUp,
   harvestRainwater,
   supportFireCrew,
+  tradeAtMarket,
   note,
   syncDay,
 } from "./core/engine";
@@ -49,6 +50,7 @@ import type { World, Scenario } from "./core/types";
 import { WorldRenderer } from "./world";
 import { storyCue, storyLandmarks } from "./story-scene";
 import { giveResidentAid, residentAidOptions } from "./core/resident-aid";
+import { marketOffer } from "./core/market";
 import { fireAid } from "./core/fire-aid";
 import { rainCollection } from "./core/rain-collection";
 import { contributeToStory, storyAid } from "./core/village-stories";
@@ -136,6 +138,7 @@ function App() {
   const focusStoryButton = useRef<HTMLButtonElement>(null),
     interfaceButton = useRef<HTMLButtonElement>(null),
     chronicleHeading = useRef<HTMLHeadingElement>(null),
+    drawer = useRef<HTMLElement>(null),
     openedFromFocus = useRef(false);
   const [ready, setReady] = useState(false),
     [paused, setPaused] = useState(false),
@@ -166,6 +169,10 @@ function App() {
     drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const w = view;
   const villageAudio = useVillageAudio(w, paused || !ready);
+  useLayoutEffect(() => {
+    // A place opened from the end of the directory starts at its own heading.
+    if (drawer.current) drawer.current.scrollTop = 0;
+  }, [panel, selected]);
   useEffect(() => {
     running.current = { paused, speed };
     selection.current = selected;
@@ -411,6 +418,7 @@ function App() {
     building = selected?.kind === "building" ? w.buildings[selected.id] : null;
   const rain = building ? rainCollection(w, building) : null;
   const fire = building ? fireAid(w, building) : null;
+  const market = building ? marketOffer(w, building) : null;
   const importFile = async (file: File) => {
     try {
       if (file.size > 8_000_000)
@@ -761,6 +769,7 @@ function App() {
       )}
       {(panel || selected) && (
         <aside
+          ref={drawer}
           className="drawer"
           onKeyDown={(event) => {
             if (event.key !== "Escape" || !openedFromFocus.current) return;
@@ -966,6 +975,38 @@ function App() {
                     }}
                   >
                     {rain.collected && rain.visible ? "Seaux vidés" : "Vider les seaux dans la réserve"}
+                  </button>
+                </section>
+              )}
+              {market && (
+                <section className="story-aid" aria-labelledby="market-title">
+                  <h3 id="market-title">L’étal de troc</h3>
+                  <p id="market-details">
+                    {market.unavailable ?? `Offre du jour : ${market.terms}. Un seul troc par jour.`}
+                  </p>
+                  <button
+                    type="button"
+                    className="primary"
+                    aria-describedby="market-details"
+                    aria-disabled={market.unavailable !== null}
+                    onClick={() => {
+                      if (market.unavailable) return;
+                      const current = world.current;
+                      const text = tradeAtMarket(current, building.id);
+                      update();
+                      if (text) {
+                        saveWorld(current).catch(() => {
+                          setSaveStatus("Échec de sauvegarde — export conseillé");
+                        });
+                      }
+                      announce(text ?? "Ce troc n’est plus disponible.");
+                    }}
+                  >
+                    {!market.open
+                      ? "Étal fermé"
+                      : market.sold
+                        ? "Troc effectué"
+                        : "Faire le troc"}
                   </button>
                 </section>
               )}

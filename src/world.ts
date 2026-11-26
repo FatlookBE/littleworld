@@ -26,6 +26,8 @@ import { drawRepairSite, repairSites } from "./repair-scene";
 import { AidFeedbacks, drawAidMarker } from "./aid-feedback";
 import { rainCollection } from "./core/rain-collection";
 import { drawRainBuckets } from "./rain-scene";
+import { marketOffer } from "./core/market";
+import { drawMarketStock } from "./market-scene";
 
 type Point = [number, number];
 type Hit = {
@@ -1277,6 +1279,16 @@ export class WorldRenderer {
     for (const b of w.buildings)
       if (!["well", "farm", "reservoir"].includes(b.type))
         objects.push({ depth: b.x + b.y + 1.5, draw: () => this.house(b, w) });
+    const hall = w.buildings.find((b) => b.type === "market");
+    const offer = hall && marketOffer(w, hall);
+    if (hall && offer?.open && !offer.sold) {
+      const x = hall.x + 2;
+      const y = hall.y + 3.6;
+      objects.push({
+        depth: x + y,
+        draw: () => drawMarketStock(c, this.project(x, y), s, offer.gets),
+      });
+    }
     if (this.crops.ready) {
       for (let row = 0; row < cropRows; row++) {
         const growth = w.cropGrowth?.[row] ?? initialGrowth(row);
