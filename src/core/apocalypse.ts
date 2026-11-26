@@ -15,6 +15,8 @@ export interface Disaster {
   attackAt?: number;
   /** Fire only: ticks of water thrown by the bucket line. */
   doused?: number;
+  /** Fire only: remaining time already removed by player aid. */
+  waterAidTicks?: number;
 }
 const DOUSING = "Jette de l’eau sur les flammes";
 export function disasters(w: World): Disaster[] {
@@ -63,8 +65,13 @@ export function apocalypse(
         w.food = Math.max(0, w.food - 0.03);
       if (isWet(w)) e.life -= 3;
       bucketLine(w, e, events, alive, b?.name, remember);
-      // A fire left burning in dry weather jumps to a nearby roof.
-      if (w.tick % 30 === 0 && e.life > 0 && e.life < 340 && !isWet(w)) {
+      // Aid shortens the fire without advancing its spread clock.
+      if (
+        w.tick % 30 === 0 &&
+        e.life > 0 &&
+        e.life + (e.waterAidTicks ?? 0) < 340 &&
+        !isWet(w)
+      ) {
         const dry =
           Math.max(0, Math.min(1, (55 - w.moisture) / 55)) *
           seasonEffects[season(w.tick)].fire;

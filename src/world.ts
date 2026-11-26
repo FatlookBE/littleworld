@@ -1542,7 +1542,9 @@ export class WorldRenderer {
           x,
           y - 10 * s,
           120 * s,
-          night * 0.42 * (0.9 + 0.1 * Math.sin(this.time * 9 + e.x)),
+          night *
+            (e.waterAidTicks ? 0.3 : 0.42) *
+            (0.9 + 0.1 * Math.sin(this.time * 9 + e.x)),
           1.3,
         );
       }
@@ -1595,13 +1597,16 @@ export class WorldRenderer {
       }
       if (e.kind === "quake" || e.kind === "plague") continue;
       if (e.kind === "fire") {
+        const heat = e.waterAidTicks ? 0.7 : 1;
+        c.save();
+        c.globalAlpha *= e.waterAidTicks ? 0.82 : 1;
         const glow = c.createRadialGradient(
           x,
           y - 15 * s,
           0,
           x,
           y - 15 * s,
-          75 * s,
+          75 * s * heat,
         );
         glow.addColorStop(0, "#ff9b384d");
         glow.addColorStop(1, "#ff480000");
@@ -1613,17 +1618,17 @@ export class WorldRenderer {
             loopFrame(t, 12, 12, e.x * 3 + e.y, w.settings.reducedMotion),
             x,
             y + 4 * s,
-            99 * s,
+            99 * s * heat,
           );
         } else if (this.environment.ready) {
-          this.environment.draw(c, 10, x, y + 4 * s, 58 * s, 99 * s);
+          this.environment.draw(c, 10, x, y + 4 * s, 58 * s * heat, 99 * s * heat);
         } else {
           for (let i = 0; i < 9; i++) {
             const dx = (i - 4) * 5 * s,
               h =
                 (23 + noise(i, e.x) * 30) *
                 (1 + 0.13 * Math.sin(t * 8 + i)) *
-                s;
+                s * heat;
             this.poly(
               [
                 [x + dx - 7 * s, y],
@@ -1654,17 +1659,19 @@ export class WorldRenderer {
             );
           }
         }
-        this.bucketSplashes(w, e, x, y);
+
         for (let i = 0; i < 12; i++) {
           const k = (t * 0.4 + i / 12) % 1;
           c.fillStyle = "#ffc677";
           c.fillRect(
             x + (noise(i, 3) - 0.5) * 45 * s + k * 15 * s,
-            y - k * 100 * s,
+            y - k * 100 * s * heat,
             2 * s,
             2 * s,
           );
         }
+        c.restore();
+        this.bucketSplashes(w, e, x, y);
       } else if (e.kind === "monster") {
         const age = e.attackAt === undefined ? Infinity : w.tick - e.attackAt;
         const attacking = age >= 0 && age < 8;

@@ -22,6 +22,7 @@ import { updateLocalEnvironment, buildingWear } from "./local-environment";
 import { updateNutrition } from "./nutrition";
 import { spreadDestination, moveResident } from "./crowd";
 import { apocalypse } from "./apocalypse";
+import { sendFireWater } from "./fire-aid";
 import { collectRainwater } from "./rain-collection";
 import { advanceVillageStories } from "./village-stories";
 import type { World, Memory, Villager, Scenario } from "./types";
@@ -108,6 +109,14 @@ export function harvestRainwater(w: World, buildingId: number) {
   const text = `L’eau des seaux rejoint la réserve (+${collected.amount} points d’eau).`;
   collected.site.events.unshift(note(w, text, "hope"));
   collected.site.events.length = Math.min(collected.site.events.length, 12);
+  return text;
+}
+export function supportFireCrew(w: World, buildingId: number) {
+  const site = sendFireWater(w, buildingId);
+  if (!site) return null;
+  const text = `Un renfort d’eau affaiblit l’incendie près de « ${site.name} ».`;
+  site.events.unshift(note(w, text, "hope"));
+  site.events.length = Math.min(site.events.length, 12);
   return text;
 }
 export function createWorld(now = Date.now(), seed = 9137): World {

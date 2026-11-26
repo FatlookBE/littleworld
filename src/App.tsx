@@ -24,6 +24,7 @@ import {
   setScenario,
   catchUp,
   harvestRainwater,
+  supportFireCrew,
   note,
   syncDay,
 } from "./core/engine";
@@ -48,6 +49,7 @@ import type { World, Scenario } from "./core/types";
 import { WorldRenderer } from "./world";
 import { storyCue } from "./story-scene";
 import { giveResidentAid, residentAidOptions } from "./core/resident-aid";
+import { fireAid } from "./core/fire-aid";
 import { rainCollection } from "./core/rain-collection";
 import { contributeToStory, storyAid } from "./core/village-stories";
 import { daylight } from "./daylight";
@@ -407,6 +409,7 @@ function App() {
   const person = selected?.kind === "person" ? w.villagers[selected.id] : null,
     building = selected?.kind === "building" ? w.buildings[selected.id] : null;
   const rain = building ? rainCollection(w, building) : null;
+  const fire = building ? fireAid(w, building) : null;
   const importFile = async (file: File) => {
     try {
       if (file.size > 8_000_000)
@@ -908,6 +911,34 @@ function App() {
                       : w.food
                 }
               />
+              {fire && (
+                <section className="story-aid" aria-labelledby="fire-aid-title">
+                  <h3 id="fire-aid-title">Incendie en cours</h3>
+                  <p id="fire-aid-details">
+                    {fire.unavailable ?? `−${fire.waterCost} points d’eau pour affaiblir les flammes, une fois par incendie.`}
+                  </p>
+                  <button
+                    type="button"
+                    className="primary"
+                    aria-describedby="fire-aid-details"
+                    aria-disabled={fire.unavailable !== null}
+                    onClick={() => {
+                      if (fire.unavailable) return;
+                      const current = world.current;
+                      const text = supportFireCrew(current, building.id);
+                      update();
+                      if (text) {
+                        saveWorld(current).catch(() => {
+                          setSaveStatus("Échec de sauvegarde — export conseillé");
+                        });
+                      }
+                      announce(text ?? "Ce renfort n’est plus disponible.");
+                    }}
+                  >
+                    {fire.fire.waterAidTicks ? "Renfort envoyé" : "Envoyer de l’eau"}
+                  </button>
+                </section>
+              )}
               {rain && (
                 <section className="story-aid" aria-labelledby="rain-collection-title">
                   <h3 id="rain-collection-title">Les seaux de pluie</h3>

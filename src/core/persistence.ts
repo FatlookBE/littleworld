@@ -1,3 +1,4 @@
+import { maxFireAidTicks } from "./fire-aid";
 import { residentAidRestTicks } from "./resident-aid";
 import { cropRows } from "./crops";
 import { residentRecordLimit, villageCapacity } from "./population";
@@ -301,6 +302,10 @@ export function restore(text: string): World {
               e.people?.length === 1)) &&
           Array.isArray(e.people) &&
           e.people.length <= 24 &&
+          (e.waterAidTicks === undefined ||
+            (e.kind === "fire" &&
+              Number.isSafeInteger(e.waterAidTicks) &&
+              finite(e.waterAidTicks, 1, maxFireAidTicks))) &&
           (e.doused === undefined ||
             (e.kind === "fire" && finite(e.doused, 0, 1e6))) &&
           (e.kind !== "fight" ||
