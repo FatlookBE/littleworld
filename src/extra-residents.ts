@@ -1,4 +1,5 @@
 import { AnimationAtlas, loopFrame } from "./animation";
+import { aidPose, type AidFeedback } from "./aid-feedback";
 import type { Villager, World } from "./core/types";
 import { nutritionStage } from "./core/nutrition";
 import { residentAction, residentActionTime } from "./resident-actions";
@@ -19,7 +20,7 @@ const walkFrames = [1, 2, 6, 3, 4, 7, 5];
 const fightFrames = [8, 9, 10, 11];
 const hitFrames = [12, 13, 13, 0];
 
-export function extraResidentPose(v: Villager, w: World, time: number) {
+export function extraResidentPose(v: Villager, w: World, time: number, feedback?: AidFeedback) {
   const animated = !w.settings.reducedMotion;
   const gaunt = nutritionStage(v) === 2;
   const offset = gaunt ? gauntOffset : 0;
@@ -55,6 +56,11 @@ export function extraResidentPose(v: Villager, w: World, time: number) {
     return at(offset + fightFrames[phase], mirror);
   }
 
+  const gift = aidPose(v, w, feedback);
+  if (gift) {
+    const phase = animated ? Math.min(3, Math.floor(gift.elapsed / 300)) : 1;
+    return at(offset + activityStarts[gift.activity] + phase, v.id % 2 === 1);
+  }
   const activity = residentAction(v, w);
   if (activity) {
     const moving = v.route.length > 0;
@@ -106,10 +112,11 @@ export class ExtraResidentAtlases {
     x: number,
     y: number,
     scale: number,
+    feedback?: AidFeedback,
   ) {
     const sheet = this.sheets[skin - 4];
     if (!sheet?.ready) return false;
-    const { frame, mirror } = extraResidentPose(v, w, time);
+    const { frame, mirror } = extraResidentPose(v, w, time, feedback);
     return sheet.draw(ctx, frame, x, y, 63 * scale, mirror);
   }
 

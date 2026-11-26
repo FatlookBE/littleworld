@@ -834,7 +834,12 @@ function App() {
                             if (item.reason) return;
                             const current = world.current;
                             const text = giveResidentAid(current, person.id, item.supply);
-                            if (text) note(current, text, "hope", person.id);
+                            if (text) {
+                              note(current, text, "hope", person.id);
+                              renderer.current?.aidFeedbacks.show(
+                                current, person.id, item.supply, performance.now(),
+                              );
+                            }
                             announce(text ?? "Cette aide n’est plus disponible.");
                             update();
                           }}

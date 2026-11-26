@@ -3,17 +3,20 @@ import type { Villager, World } from "./core/types";
 export type ResidentAction =
   "gather" | "work" | "drink" | "eat" | "bake" | "care" | "carry";
 
-/** An activity starts at its destination, never while travelling or fighting. */
-export function residentAction(v: Villager, w: World): ResidentAction | null {
-  if (
+export function residentActivityAllowed(v: Villager, w: World) {
+  return !(
     v.dead ||
     v.health < 30 ||
     v.morale < 25 ||
     (v.visit && v.visit.phase !== "approaching") ||
     (v.hitAt !== undefined && w.tick - v.hitAt >= 0 && w.tick - v.hitAt < 4) ||
     w.disasters?.some((e) => e.kind === "fight" && e.people.includes(v.id))
-  )
-    return null;
+  );
+}
+
+/** An activity starts at its destination, never while travelling or fighting. */
+export function residentAction(v: Villager, w: World): ResidentAction | null {
+  if (!residentActivityAllowed(v, w)) return null;
   const action = v.action.toLocaleLowerCase("fr");
   // Carrying uses an actual walking sheet during travel; all other activities
   // remain stationary and start only at the destination.

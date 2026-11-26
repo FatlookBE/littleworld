@@ -22,6 +22,7 @@ import { autumnColour, bareBranches, snowCover } from "./core/seasons";
 import type { World, Building, Villager } from "./core/types";
 import { drawStoryCue, drawStoryTrace, storyCue, storyTraces } from "./story-scene";
 import { drawRepairSite, repairSites } from "./repair-scene";
+import { AidFeedbacks, drawAidMarker } from "./aid-feedback";
 
 type Point = [number, number];
 type Hit = {
@@ -111,6 +112,8 @@ export class WorldRenderer {
   height = 0;
   scale = 1;
   time = 0;
+  readonly aidFeedbacks = new AidFeedbacks();
+  private frameNow = 0;
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d")!;
@@ -711,7 +714,8 @@ export class WorldRenderer {
       c.stroke();
     }
     this.ellipse(sx + 2 * s, sy + 1 * s, 4, 2, "#2c3c3545");
-    if (!this.atlas.draw(c, v, w, this.time, sx, sy, s)) {
+    const feedback = this.aidFeedbacks.forResident(v.id, this.frameNow);
+    if (!this.atlas.draw(c, v, w, this.time, sx, sy, s, feedback)) {
       const colors = [
         "#8b5747",
         "#d4b45d",
@@ -838,6 +842,13 @@ export class WorldRenderer {
         );
       }
     }
+    if (feedback) {
+      const markerY = sy - 65 * s - (v.id === selected ? 24 : 10);
+      drawAidMarker(
+        c, sx, markerY, Math.max(0.78, this.scale), feedback,
+        w.settings.reducedMotion,
+      );
+    }
     this.hits.push({ x: sx, y: sy - 29 * s, id: v.id, kind: "person" });
     if (v.id === selected) {
       c.font = `${Math.max(11, 11 * s)}px Georgia`;
@@ -850,6 +861,8 @@ export class WorldRenderer {
     }
   }
   render(w: World, time: number, selected: number | null) {
+    this.frameNow = performance.now();
+    this.aidFeedbacks.update(w, this.frameNow);
     this.resize();
     this.tick = w.tick;
     this.time = w.settings.reducedMotion ? 0 : time;
