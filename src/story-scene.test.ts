@@ -123,8 +123,10 @@ it("stages the carpenter clues by the workshop and keeps only a small trestle af
   w.stories = { nextAt: 400, finished: [cue.id], traces: [cue.id] };
   expect(storyCue(w)).toBeNull();
   const [trace] = storyTraces(w);
-  drawStoryTrace(ctx, trace, [30, 40], 1);
-  expect(c.strokeRect).toHaveBeenCalledTimes(1);
+  const atlas = { draw: vi.fn() };
+  drawStoryTrace(ctx, trace, [30, 40], 1, atlas);
+  expect(atlas.draw).not.toHaveBeenCalled();
+  expect(c.strokeRect).not.toHaveBeenCalled();
   expect(trace).toMatchObject({ id: cue.id, x: cue.x });
   expect(trace.y).toBeCloseTo(site.y + 2.8);
 });
@@ -149,4 +151,18 @@ it("does not turn old saves with only completed story IDs into landmarks", () =>
   const w = createWorld(0);
   w.stories = { nextAt: 90, finished: ["cistern", "lanterns"] };
   expect(storyLandmarks(w)).toEqual([]);
+});
+
+it("draws each keepsake from its own atlas cell at the existing world anchor", () => {
+  const w = createWorld(0);
+  const ids = ["cistern", "lanterns", "seed-cache", "lost-starter"] as const;
+  w.stories = { nextAt: 90, finished: [...ids], traces: [...ids] };
+  const atlas = { draw: vi.fn() };
+  const ctx = {} as CanvasRenderingContext2D;
+  for (const [index, trace] of storyTraces(w).entries()) {
+    drawStoryTrace(ctx, trace, [trace.x, trace.y], 2, atlas);
+    expect(atlas.draw).toHaveBeenNthCalledWith(
+      index + 1, ctx, index, trace.x, trace.y, 48,
+    );
+  }
 });

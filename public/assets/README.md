@@ -142,3 +142,9 @@ Consigne ImageGen, avec `environment-atlas.png` et `waterworks.png` comme réfé
 `market-stall.webp` : deux cellules de 256 × 256 px, fond alpha transparent. Pains à gauche, seaux à droite. L’atlas conserve un ancrage au pied et une échelle commune pour les deux états. Ces sprites remplacent la composition de petits accessoires et les rectangles de repli ; ils ne changent pas les règles du troc.
 
 Créé avec ImageGen à partir du marché de `environment-atlas.png` comme référence de perspective et de style : « two variants of one small merchant counter, same silhouette and ground, bread on the left, blue-green water buckets on the right; match the existing village outlines, warm wood, beige-red cloth and upper-left lighting; transparent alpha, no background, floor or people ». Le fichier distribué est redimensionné en WebP sans perte.
+
+## Traces des histoires
+
+`story-keepsakes.webp` : quatre sprites statiques dans une grille 2 × 2, cellules de 384 × 192 px. Dans l’ordre : plaque de la citerne, panneau des lanternes (emblèmes gravés, pas de lumière), bac des semis, deux pots de levain. Les positions et la distinction avec les indices actifs restent inchangées. Le tréteau garde son sprite séparé.
+
+Créé avec ImageGen en prenant le marché d’`environment-atlas.png` et `market-stall.webp` comme références : « four separate small permanent village props, matching elevated three-quarter view, dark brown contours, warm wood, metal patina, terracotta, muted greens, zero-alpha gaps, no floor or glow ». Un second passage ImageGen retire le fond de l’atlas en conservant les quatre silhouettes. Le WebP est redimensionné sans perte à partir de cette planche.
