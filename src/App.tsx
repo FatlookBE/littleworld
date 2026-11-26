@@ -46,6 +46,7 @@ import { loadWorld, saveWorld, restore } from "./core/persistence";
 import type { World, Scenario } from "./core/types";
 import { WorldRenderer } from "./world";
 import { storyCue } from "./story-scene";
+import { giveResidentAid, residentAidOptions } from "./core/resident-aid";
 import { contributeToStory, storyAid } from "./core/village-stories";
 import { daylight } from "./daylight";
 import { daysToNextSeason, season, seasonNames } from "./core/seasons";
@@ -815,6 +816,38 @@ function App() {
                   <Meter label="Santé" value={person.health} />
                   <Meter label="Moral" value={person.morale} />
                 </>
+              )}
+              {!person.dead && (
+                <section className="resident-aid" aria-labelledby="resident-aid-title">
+                  <h3 id="resident-aid-title">Aider cet habitant</h3>
+                  <p>Chaque geste puise dans les réserves du village.</p>
+                  {residentAidOptions(w, person).map((item) => {
+                    const hint = `resident-aid-${item.supply}`;
+                    return (
+                      <div className="resident-aid-option" key={item.supply}>
+                        <button
+                          type="button"
+                          className="primary"
+                          aria-disabled={item.reason !== null}
+                          aria-describedby={hint}
+                          onClick={() => {
+                            if (item.reason) return;
+                            const current = world.current;
+                            const text = giveResidentAid(current, person.id, item.supply);
+                            if (text) note(current, text, "hope", person.id);
+                            announce(text ?? "Cette aide n’est plus disponible.");
+                            update();
+                          }}
+                        >
+                          {item.label}
+                        </button>
+                        <small id={hint}>
+                          {item.reason ?? `Coût : ${item.cost} points ${item.supply === "water" ? "d’eau" : "de nourriture"}.`}
+                        </small>
+                      </div>
+                    );
+                  })}
+                </section>
               )}
               <CauseList
                 title="Ce qui explique son état"
