@@ -95,7 +95,10 @@ it("leaves independent bridge traces without making a completed story active", (
   const [cistern, lanterns] = storyTraces(w);
   expect(cistern.id).toBe("cistern");
   expect(lanterns.id).toBe("lanterns");
-  expect(cistern.x - lanterns.x).toBeCloseTo(2.4);
+  expect(cistern.x - lanterns.x).toBeCloseTo(4.6);
+  for (const trace of [cistern, lanterns]) {
+    expect(Math.abs(trace.x - riverCenter(trace.y))).toBeGreaterThan(1.6);
+  }
   expect(storyCue(w)).toBeNull();
 });
 

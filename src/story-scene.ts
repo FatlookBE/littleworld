@@ -50,11 +50,17 @@ export function storyTraces(w: StoryWorld): StorySite[] {
   return (w.stories?.traces ?? []).flatMap((id) => {
     const site = storySite(w, id);
     if (!site) return [];
-    // Two stories share this bridge; use opposite ends, away from the active cue.
-    if (id === "lanterns") site.x -= 1.2;
-    if (id === "cistern") site.x += 1.2;
-    // Keepsakes sit on the frontage, clear of nearby roofs in the painted view.
-    if (id === "seed-cache" || id === "lost-starter") site.y += 1;
+    // Leave the bridge deck for active clues, and the keepsakes on dry ground.
+    if (id === "lanterns" || id === "cistern") {
+      site.y += 0.85;
+      site.x = riverCenter(site.y) + (id === "lanterns" ? -2.15 : 2.45);
+    }
+    // Beside the Hall, instead of behind the clinic roof or above the market stall.
+    if (id === "seed-cache") {
+      site.x -= 1.6;
+      site.y -= 0.45;
+    }
+    if (id === "lost-starter") site.y += 1;
     if (id === "carpenter-marks") site.y += 1.8;
     return [site];
   });

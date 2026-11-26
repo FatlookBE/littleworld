@@ -145,6 +145,6 @@ Créé avec ImageGen à partir du marché de `environment-atlas.png` comme réf�
 
 ## Traces des histoires
 
-`story-keepsakes.webp` : quatre sprites statiques dans une grille 2 × 2, cellules de 384 × 192 px. Dans l’ordre : plaque de la citerne, panneau des lanternes (emblèmes gravés, pas de lumière), bac des semis, deux pots de levain. Les positions et la distinction avec les indices actifs restent inchangées. Le tréteau garde son sprite séparé.
+`story-keepsakes.webp` : quatre sprites statiques dans une grille 2 × 2, cellules de 384 × 192 px. Dans l’ordre : plaque de la citerne, panneau des lanternes (emblèmes gravés, pas de lumière), bac des semis, deux pots de levain. Les repères du pont restent sur les deux rives, à l’écart des indices actifs ; le bac est décalé à côté de la Halle pour éviter les masquages. Le tréteau garde son sprite séparé.
 
 Créé avec ImageGen en prenant le marché d’`environment-atlas.png` et `market-stall.webp` comme références : « four separate small permanent village props, matching elevated three-quarter view, dark brown contours, warm wood, metal patina, terracotta, muted greens, zero-alpha gaps, no floor or glow ». Un second passage ImageGen retire le fond de l’atlas en conservant les quatre silhouettes. Le WebP est redimensionné sans perte à partir de cette planche.
