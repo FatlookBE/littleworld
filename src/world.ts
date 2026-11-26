@@ -5,7 +5,8 @@ import { residentScale } from "./core/population";
 import { indoors, needsHomeCare } from "./core/shelter";
 import { drawHouseDoor } from "./house-door";
 import { treePosition } from "./core/local-environment";
-import { foragingHens } from "./hens";
+import { villageHens } from "./hens";
+import { WildlifeRhythm } from "./wildlife-rhythm";
 import { drawSwallows } from "./swallows";
 import { drawCritters } from "./critters";
 import { bridgeRows, riverCenter, riverHalfWidth } from "./core/navigation";
@@ -56,6 +57,7 @@ export class WorldRenderer {
   ctx: CanvasRenderingContext2D;
   atlas = new ResidentAtlas();
   crops = new AnimationAtlas("/assets/farm-crops.webp", 4, 3, 0, false, true);
+  wildlife = new WildlifeRhythm();
   hens = new AnimationAtlas("/assets/farm-hens.webp", 4, 6, 0, false, true);
   remains = new AnimationAtlas("/assets/residents-remains.png", 4, 4);
   foundation = new WorldFoundation();
@@ -866,6 +868,7 @@ export class WorldRenderer {
     this.resize();
     this.tick = w.tick;
     this.time = w.settings.reducedMotion ? 0 : time;
+    this.wildlife.update(w, time, w.settings.reducedMotion);
     this.waterLevel.update(w.water, time, w.settings.reducedMotion);
     this.scale =
       Math.min(this.width / 1500, Math.max(220, this.height - 280) / 1650) *
@@ -1280,7 +1283,9 @@ export class WorldRenderer {
       }
     }
     if (this.hens.ready) {
-      for (const hen of foragingHens(this.time)) {
+      for (const hen of villageHens(
+        this.time, this.wildlife.cover, this.wildlife.headingToCover, w.settings.reducedMotion,
+      )) {
         objects.push({
           depth: hen.x + hen.y,
           draw: () => {
@@ -1391,7 +1396,7 @@ export class WorldRenderer {
         this.project(14, 14, 110),
         s,
         this.time,
-        daylight(w.tick) * Math.min(1, Math.max(0, (0.7 - p) / 0.22)),
+        this.wildlife.flight,
       );
       if (w.weather === "Neige légère") {
         // Flakes drift and wobble instead of falling straight.
