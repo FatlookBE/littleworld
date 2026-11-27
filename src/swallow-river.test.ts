@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { riverSwallows } from "./swallow-river";
+import { riverSwallows, riverWatch } from "./swallow-river";
 import { riverCenter, riverHalfWidth } from "./core/navigation";
 
 const clear = { tick: 1199, weather: "Ciel clair", water: 70, pressure: 10 };
@@ -38,4 +38,34 @@ it("fades near the ends of the route and as the river dries", () => {
   expect(
     riverSwallows({ ...clear, water: 50 }, 1208)[0].visibility,
   ).toBeLessThan(0.5);
+});
+
+it("reports the current activity and frames the flying birds along the river", () => {
+  const w = { ...clear, tick: 1208, settings: { reducedMotion: false } };
+  const birds = riverSwallows(w);
+  const target = riverWatch(w);
+  expect(target.status).toBe("active");
+  expect(target.y).toBeCloseTo((birds[0].y + birds[1].y) / 2);
+  expect(target.x).toBe(riverCenter(target.y));
+  expect(riverWatch({ ...w, tick: 1180 }).status).toBe("upcoming");
+  expect(riverWatch({ ...w, tick: 1230 }).status).toBe("over");
+});
+
+it("explains why no flight can be seen without changing the river viewpoint", () => {
+  const w = { ...clear, tick: 1208, settings: { reducedMotion: false } };
+  const dry = riverWatch({ ...w, water: 45 });
+  expect(dry.status).toBe("water");
+  expect(riverWatch({ ...w, tick: 10 }).status).toBe("season");
+  expect(riverWatch({ ...w, weather: "Pluie légère" })).toEqual({
+    ...dry,
+    status: "weather",
+  });
+  expect(riverWatch({ ...w, pressure: 64 })).toEqual({
+    ...dry,
+    status: "pressure",
+  });
+  expect(riverWatch({ ...w, settings: { reducedMotion: true } })).toEqual({
+    ...dry,
+    status: "motion",
+  });
 });
