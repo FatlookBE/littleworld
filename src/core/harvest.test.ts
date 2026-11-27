@@ -93,3 +93,24 @@ it("sends a free grower to ripe crops and reports the harvest at the farm and in
   expect(w.buildings.find((b) => b.type === "farm")?.events).toContain(event);
   expect(w.cropGrowth?.[0]).toBeLessThan(0.02);
 });
+
+it("keeps a later shortage warning distinct from a successful harvest", () => {
+  const { w, v } = ready();
+  for (const other of w.villagers) {
+    other.nextDecision = 9999;
+    other.cooldown = 9999;
+  }
+  step(w);
+  const success = v.memories.find((event) =>
+    event.text.includes("rentre la récolte"),
+  );
+  expect(success).toMatchObject({ kind: "hope" });
+  w.food = 30;
+  for (let i = 0; i < 3; i++) step(w);
+  expect(v.memories).toContain(success);
+  expect(
+    v.memories.filter(
+      (event) => event.text === `${v.name} a perdu une partie de sa récolte.`,
+    ),
+  ).toHaveLength(1);
+});

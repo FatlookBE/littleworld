@@ -706,12 +706,13 @@ export function step(w: World) {
       v.health + (v.thirst > 85 || v.hunger > 90 ? -0.12 : 0.025),
     );
     if (!talkingPartner(w, v)) social(w, v);
-    if (
-      w.food < 35 &&
-      v.id % 8 === 0 &&
-      !v.memories.some((e) => e.text.includes("récolte"))
-    )
-      note(w, `${v.name} a perdu une partie de sa récolte.`, "warning", v.id);
+    if (w.food < 35 && v.id % 8 === 0) {
+      const cropLoss = "a perdu une partie de sa récolte.";
+      const alreadyWarned = v.memories.some(
+        (e) => e.kind === "warning" && e.text.endsWith(` ${cropLoss}`),
+      );
+      if (!alreadyWarned) note(w, `${v.name} ${cropLoss}`, "warning", v.id);
+    }
     if (v.health <= 0) die(w, v);
   }
   apocalypse(
