@@ -59,11 +59,22 @@ import { fireAid } from "./core/fire-aid";
 import { rainCollection } from "./core/rain-collection";
 import { contributeToStory, storyAid } from "./core/village-stories";
 import { daylight } from "./daylight";
+import { riverWatch } from "./swallow-river";
 import { daysToNextSeason, season, seasonNames } from "./core/seasons";
 import "./App.css";
 
 type Panel = "settings" | "chronicle" | "residents" | "about" | "data" | null;
 type Selection = { kind: "person" | "building"; id: number } | null;
+const riverWatchCopy: Record<ReturnType<typeof riverWatch>["status"], string> = {
+  active: "Les hirondelles longent la rivière en ce moment.",
+  upcoming: "Regardez vers midi, si le temps reste sec.",
+  over: "Le passage de midi est terminé pour aujourd’hui.",
+  season: "Elles reviennent de la fin du printemps à la fin de l’été.",
+  weather: "Elles ne longent pas la rivière par ce temps.",
+  water: "La rivière est trop basse pour les attirer.",
+  pressure: "Les hirondelles ne descendent pas quand le village est sous forte pression.",
+  motion: "Le vol n’est pas animé avec les mouvements réduits.",
+};
 const fmt = (n: number) => new Intl.NumberFormat("fr-FR").format(Math.round(n));
 const clock = (tick: number) => {
   const h = (8 + tick / 12) % 24;
@@ -376,6 +387,7 @@ function App() {
     latest = w.chronicle[0];
   const cue = storyCue(w);
   const landmarks = panel === "chronicle" || focus ? storyLandmarks(w) : [];
+  const watch = panel === "chronicle" ? riverWatch(w) : null;
   const aid = panel === "chronicle" ? storyAid(w) : null;
   const dailyUsage = dailyFresh(w);
   const todayTokens = dailyUsage.get(w.day) ?? 0;
@@ -642,7 +654,7 @@ function App() {
         >
           ▣
         </button>
-        {focus && (cue || landmarks.length > 0) && !panel && !selected && (
+        {focus && !panel && !selected && (
           <button
             type="button"
             className="focus-story-entry"
@@ -654,7 +666,7 @@ function App() {
             }}
           >
             <span aria-hidden="true">◈</span>{" "}
-            {cue ? "Événement en cours" : "Traces du village"}
+            {cue ? "Événement en cours" : landmarks.length ? "Traces du village" : "Chronique"}
           </button>
         )}
       </div>
@@ -1250,6 +1262,31 @@ function App() {
                       </li>
                     ))}
                   </ul>
+                </section>
+              )}
+              {watch && (
+                <section className="story-landmarks" aria-labelledby="river-watch-title">
+                  <h3 id="river-watch-title">Au bord de la rivière</h3>
+                  <button
+                    type="button"
+                    className="resident-row"
+                    onClick={() => {
+                      const r = renderer.current;
+                      if (!r) return;
+                      const target = riverWatch(world.current);
+                      changeZoom(3);
+                      r.locateLandmark(target.x, target.y, interaction.current);
+                      close(false);
+                      announce(`Rivière cadrée. ${riverWatchCopy[target.status]}`);
+                      requestAnimationFrame(() => canvas.current?.focus());
+                    }}
+                  >
+                    <span>
+                      Observer la rivière
+                      <small>{riverWatchCopy[watch.status]}</small>
+                    </span>
+                    <span aria-hidden="true">↗</span>
+                  </button>
                 </section>
               )}
               <ol className="timeline">
