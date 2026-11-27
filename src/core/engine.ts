@@ -1,5 +1,6 @@
 import { field } from "../village-layout";
 import { growCrops } from "./crops";
+import { finishHarvest, harvestJob, harvestAction } from "./harvest";
 import { indoors, needsHomeCare } from "./shelter";
 import {
   growResident,
@@ -353,6 +354,21 @@ function destination(w: World, v: Villager) {
       return;
     }
     const job = v.id % 8;
+    if (job === 0) {
+      const work = harvestJob(w, v);
+      if (work) {
+        const route = findRoute(w, [v.x, v.y], work);
+        const stop = route.at(-1);
+        if (stop?.[0] === work[0] && stop[1] === work[1]) {
+          v.route = route;
+          v.target = stop;
+          v.action = harvestAction;
+          v.actionAt = w.tick;
+          v.nextDecision = w.tick + 40;
+          return;
+        }
+      }
+    }
     const spots: [number, number][] = [
       [field.x + 1.5 + (v.id % 3), field.y + 0.5],
       [13, 10.5],
@@ -690,12 +706,13 @@ export function step(w: World) {
       v.health + (v.thirst > 85 || v.hunger > 90 ? -0.12 : 0.025),
     );
     if (!talkingPartner(w, v)) social(w, v);
-    if (
-      w.food < 35 &&
-      v.id % 8 === 0 &&
-      !v.memories.some((e) => e.text.includes("récolte"))
-    )
-      note(w, `${v.name} a perdu une partie de sa récolte.`, "warning", v.id);
+    if (w.food < 35 && v.id % 8 === 0) {
+      const cropLoss = "a perdu une partie de sa récolte.";
+      const alreadyWarned = v.memories.some(
+        (e) => e.kind === "warning" && e.text.endsWith(` ${cropLoss}`),
+      );
+      if (!alreadyWarned) note(w, `${v.name} ${cropLoss}`, "warning", v.id);
+    }
     if (v.health <= 0) die(w, v);
   }
   apocalypse(
@@ -729,6 +746,20 @@ export function step(w: World) {
       ),
     );
     bread.site.events.length = Math.min(bread.site.events.length, 12);
+  }
+  for (const v of alive) {
+    const harvest = finishHarvest(w, v);
+    if (!harvest) continue;
+    const { farm, row, food } = harvest;
+    farm.events.unshift(
+      note(
+        w,
+        `${v.name} rentre la récolte du rang ${row + 1} : +${food} au garde-manger.`,
+        "hope",
+        v.id,
+      ),
+    );
+    farm.events.length = Math.min(farm.events.length, 12);
   }
   advanceNeighbourTalk(w, (text, kind, person) => note(w, text, kind, person));
   const child = welcomeChild(w);
