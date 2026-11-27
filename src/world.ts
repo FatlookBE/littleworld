@@ -9,6 +9,7 @@ import { indoors, needsHomeCare } from "./core/shelter";
 import { drawHouseDoor } from "./house-door";
 import { treePosition } from "./core/local-environment";
 import { villageHens } from "./hens";
+import { fieldAlarm, HenAlarm } from "./hen-alarm";
 import { WildlifeRhythm } from "./wildlife-rhythm";
 import { drawRiverSwallows, drawSwallows } from "./swallows";
 import { riverSwallows } from "./swallow-river";
@@ -75,6 +76,7 @@ export class WorldRenderer {
   );
   marketStall = new AnimationAtlas("/assets/market-stall.webp", 2, 1, 0, true);
   hens = new AnimationAtlas("/assets/farm-hens.webp", 4, 6, 0, false, true);
+  henAlarm = new HenAlarm();
   remains = new AnimationAtlas("/assets/residents-remains.png", 4, 4);
   foundation = new WorldFoundation();
   terrain = new PaintedTerrain();
@@ -1365,9 +1367,10 @@ export class WorldRenderer {
       }
     }
     if (this.hens.ready) {
-      for (const hen of villageHens(
+      const hens = villageHens(
         this.time, this.wildlife.cover, this.wildlife.headingToCover, w.settings.reducedMotion,
-      )) {
+      );
+      for (const hen of this.henAlarm.place(hens, fieldAlarm(w), time, w.settings.reducedMotion)) {
         objects.push({
           depth: hen.x + hen.y,
           draw: () => {

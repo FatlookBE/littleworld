@@ -1,4 +1,5 @@
 import { bridgeLight } from "./bridge-lights";
+import { fieldAlarm } from "./hen-alarm";
 import { talkingPartner } from "./core/neighbour-talk";
 import { youthStage } from "./young-residents";
 import { villageCapacity } from "./core/population";
@@ -73,6 +74,11 @@ const clock = (tick: number) => {
     .toString()
     .padStart(2, "0")}`;
 };
+function FarmAlarm({ world }: { world: World }) {
+  const alarm = fieldAlarm(world);
+  return alarm ? <p>{alarm.label}</p> : null;
+}
+
 function download(name: string, text: string) {
   const url = URL.createObjectURL(
     new Blob([text], { type: "application/json" }),
@@ -936,6 +942,7 @@ function App() {
                       : w.food
                 }
               />
+              {building.type === "farm" && <FarmAlarm world={w} />}
               {fire && (
                 <section className="story-aid" aria-labelledby="fire-aid-title">
                   <h3 id="fire-aid-title">Incendie en cours</h3>
