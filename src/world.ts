@@ -10,7 +10,8 @@ import { drawHouseDoor } from "./house-door";
 import { treePosition } from "./core/local-environment";
 import { villageHens } from "./hens";
 import { WildlifeRhythm } from "./wildlife-rhythm";
-import { drawSwallows } from "./swallows";
+import { drawRiverSwallows, drawSwallows } from "./swallows";
+import { riverSwallows } from "./swallow-river";
 import { drawCritters } from "./critters";
 import { bridgeRows, riverCenter, riverHalfWidth } from "./core/navigation";
 import { remainsStage } from "./core/lifecycle";
@@ -1485,6 +1486,13 @@ export class WorldRenderer {
         s,
         this.time,
         this.wildlife.flight,
+      );
+      drawRiverSwallows(
+        c,
+        riverSwallows(w, w.tick + this.interpolation),
+        (x, y, z) => this.project(x, y, z),
+        s,
+        this.time,
       );
       if (w.weather === "Neige légère") {
         // Flakes drift and wobble instead of falling straight.
