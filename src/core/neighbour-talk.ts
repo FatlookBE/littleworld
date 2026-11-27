@@ -28,7 +28,7 @@ function isFree(w: World, v: Villager, mayPauseWalk = false) {
     v.health >= 30 &&
     v.morale >= 25 &&
     (v.hitAt === undefined || w.tick - v.hitAt >= 4) &&
-    !/maison|repose|repas|manger|puits|eau|reconstruit/i.test(v.action) &&
+    !/maison|repose|repas|manger|puits|eau|reconstruit|soigne|soins/i.test(v.action) &&
     !w.disasters?.some(
       (event) =>
         event.life > 0 &&
